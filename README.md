@@ -1,4 +1,4 @@
-![Python versions](https://img.shields.io/badge/python-3.8%|%203.9%20|%203.10%20|%203.11-blue)
+![Python versions](https://img.shields.io/badge/python-3.8%20|%203.9%20|%203.10%20|%203.11-blue)
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/pypi/v/pyscipopt-ml)](https://pypi.org/project/pyscipopt-ml)
 
