@@ -200,7 +200,7 @@ def build_and_optimise_adversarial_mnist_torch(
     return scip
 
 
-@pytest.mark.scip(reason="Takes too long when deploying to PyPI")
+@pytest.mark.skip(reason="Takes too long when deploying to PyPI")
 def test_mnist_torch():
     scip = build_and_optimise_adversarial_mnist_torch(
         42, 12, layer_sizes=(10, 10), image_number=10000, test=True
