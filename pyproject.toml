@@ -1,0 +1,25 @@
+[project]
+name = "pyscipopt-ml"
+version = "0.0.1"
+description = "automatically formulate and embed ML models into MIPs with SCIP"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text="MIT"}
+keywords = ["mixed-integer programming", "SCIP", "scikit-learn", "pytorch", "xgboost", "lightgbm", "ml"]
+
+dependencies = [
+  "numpy",
+  "pyscipopt==4.4.0"
+]
+
+[project.urls]
+Repository = "https://github.com/Opt-Mucca/PySCIPOpt-ML"
+Documentation = "https://pyscipopt-ml.readthedocs.io/en/stable/"
+"Bug Tracker" = "https://github.com/Opt-Mucca/PySCIPOpt-ML/issues"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+skip="pp* cp36* cp37* cp312*"
