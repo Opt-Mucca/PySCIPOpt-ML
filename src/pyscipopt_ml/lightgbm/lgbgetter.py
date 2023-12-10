@@ -1,6 +1,5 @@
 """Implements some utility tools for all lightgbm objects."""
 import numpy as np
-
 from sklearn.base import is_classifier
 
 from ..exceptions import NoModel, NoSolution, ParameterError
@@ -21,10 +20,15 @@ class LGBgetter(AbstractPredictorConstr):
 
     def __init__(self, predictor, input_vars, output_type="regular", **kwargs):
         if not hasattr(predictor, "booster_"):
-            raise ParameterError("LightGBM model has not yet been fitted. There is nothing to model.")
+            raise ParameterError(
+                "LightGBM model has not yet been fitted. There is nothing to model."
+            )
         if predictor.boosting_type not in ["gbdt", "rf"]:
-            raise NoModel(predictor, f"There is only support for LightGBM boosting type gbdt and rf. "
-                                     f"Not {predictor.boosting_type}")
+            raise NoModel(
+                predictor,
+                f"There is only support for LightGBM boosting type gbdt and rf. "
+                f"Not {predictor.boosting_type}",
+            )
         self.predictor = predictor
 
     def extract_raw_data_and_create_tree_vars(self, epsilon=0.0):
@@ -74,8 +78,10 @@ class LGBgetter(AbstractPredictorConstr):
             else:
                 tree["value"].append([[tree_structure["leaf_value"]]])
             if "decision_type" in tree_structure and tree_structure["decision_type"] != "<=":
-                raise ParameterError(f"Currently no support for LightGBM trees with decision type "
-                                     f"{tree_structure['decision_type']}")
+                raise ParameterError(
+                    f"Currently no support for LightGBM trees with decision type "
+                    f"{tree_structure['decision_type']}"
+                )
 
             # Add in dummy left and right children
             tree["children_left"].append(-1)
@@ -90,26 +96,48 @@ class LGBgetter(AbstractPredictorConstr):
 
             return tree
 
-        trees = [[{"node_count": 0, "n_features": n_features, "children_left": [], "children_right": [],
-                   "feature": [], "threshold": [], "value": []} for _ in range(outdim)] for _ in range(n_estimators)]
+        trees = [
+            [
+                {
+                    "node_count": 0,
+                    "n_features": n_features,
+                    "children_left": [],
+                    "children_right": [],
+                    "feature": [],
+                    "threshold": [],
+                    "value": [],
+                }
+                for _ in range(outdim)
+            ]
+            for _ in range(n_estimators)
+        ]
         trees_converted = [0 for _ in range(outdim)]
         for i in range(n_trees):
             tree_raw = raw["tree_info"][i]["tree_structure"]
             class_idx = i % outdim
             tree_idx = trees_converted[class_idx]
             trees[tree_idx][class_idx] = read_node(trees[tree_idx][class_idx], tree_raw)
-            trees[tree_idx][class_idx]["children_left"] = np.array(trees[tree_idx][class_idx]["children_left"],
-                                                                   dtype=np.int32)
-            trees[tree_idx][class_idx]["children_right"] = np.array(trees[tree_idx][class_idx]["children_right"],
-                                                                    dtype=np.int32)
-            trees[tree_idx][class_idx]["feature"] = np.array(trees[tree_idx][class_idx]["feature"], dtype=np.int32)
-            trees[tree_idx][class_idx]["threshold"] = np.array(trees[tree_idx][class_idx]["threshold"],
-                                                               dtype=np.float64)
-            trees[tree_idx][class_idx]["value"] = np.array(trees[tree_idx][class_idx]["value"], dtype=np.float64)
+            trees[tree_idx][class_idx]["children_left"] = np.array(
+                trees[tree_idx][class_idx]["children_left"], dtype=np.int32
+            )
+            trees[tree_idx][class_idx]["children_right"] = np.array(
+                trees[tree_idx][class_idx]["children_right"], dtype=np.int32
+            )
+            trees[tree_idx][class_idx]["feature"] = np.array(
+                trees[tree_idx][class_idx]["feature"], dtype=np.int32
+            )
+            trees[tree_idx][class_idx]["threshold"] = np.array(
+                trees[tree_idx][class_idx]["threshold"], dtype=np.float64
+            )
+            trees[tree_idx][class_idx]["value"] = np.array(
+                trees[tree_idx][class_idx]["value"], dtype=np.float64
+            )
             trees_converted[class_idx] += 1
 
         shape = (n_samples, n_estimators, outdim)
-        tree_vars = create_vars(self.scip_model, shape=shape, vtype='C', lb=None, ub=None, name_prefix="tree")
+        tree_vars = create_vars(
+            self.scip_model, shape=shape, vtype="C", lb=None, ub=None, name_prefix="tree"
+        )
 
         return trees, tree_vars
 
@@ -138,8 +166,9 @@ class LGBgetter(AbstractPredictorConstr):
 
         if self._has_solution:
             if not is_classifier(self.predictor):
-                lgb_output_values = self.predictor.predict(self.input_values).reshape(self.input.shape[0],
-                                                                                      self.output.shape[-1])
+                lgb_output_values = self.predictor.predict(self.input_values).reshape(
+                    self.input.shape[0], self.output.shape[-1]
+                )
             else:
                 lgb_class_prediction = self.predictor.predict(self.input_values)
                 lgb_output_values = np.zeros((self.input.shape[0], self.output.shape[-1]))
@@ -149,7 +178,9 @@ class LGBgetter(AbstractPredictorConstr):
             error = np.abs(lgb_output_values - scip_output_values)
             max_error = np.max(error)
             if eps is not None and max_error > eps:
-                print(f"SCIP output values of ML model {self.predictor} have larger than max error {max_error} > {eps}")
+                print(
+                    f"SCIP output values of ML model {self.predictor} have larger than max error {max_error} > {eps}"
+                )
             return error
 
         raise NoSolution()

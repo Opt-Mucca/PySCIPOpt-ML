@@ -5,7 +5,9 @@ from .modelling.get_convertor import get_convertor
 from .registered_predictors import registered_predictors
 
 
-def add_predictor_constr(scip_model, predictor, input_vars, output_vars=None, unique_naming_prefix="p_", **kwargs):
+def add_predictor_constr(
+    scip_model, predictor, input_vars, output_vars=None, unique_naming_prefix="p_", **kwargs
+):
     """Formulate predictor in PySCIPOpt model.
 
     The formulation predicts the values of output_vars using input_vars according to
@@ -55,5 +57,9 @@ def add_predictor_constr(scip_model, predictor, input_vars, output_vars=None, un
     if convertor is None:
         raise NotRegistered(type(predictor).__name__)
     if len(unique_naming_prefix) > 0 and unique_naming_prefix[0].isdigit():
-        warn(f"Unique naming prefix {unique_naming_prefix} begins with a digit and is unsafe for printing LP files")
-    return convertor(scip_model, predictor, input_vars, output_vars, unique_naming_prefix, **kwargs)
+        warn(
+            f"Unique naming prefix {unique_naming_prefix} begins with a digit and is unsafe for printing LP files"
+        )
+    return convertor(
+        scip_model, predictor, input_vars, output_vars, unique_naming_prefix, **kwargs
+    )

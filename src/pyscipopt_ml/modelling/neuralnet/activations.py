@@ -1,7 +1,6 @@
 """Internal module to make MIP modeling of activation functions."""
 
 import numpy as np
-
 from pyscipopt import exp, quicksum
 
 
@@ -28,19 +27,24 @@ def add_identity_activation_constraint_layer(layer):
     affine_cons = np.zeros((n_samples, n_nodes_right), dtype=object)
 
     # Perform some basic activity based bound propagation
-    propagation_success, lbs, ubs = propagate_identity_bounds(layer, n_samples, n_nodes_left, n_nodes_right, False)
+    propagation_success, lbs, ubs = propagate_identity_bounds(
+        layer, n_samples, n_nodes_left, n_nodes_right, False
+    )
 
     for i in range(n_samples):
         for j in range(n_nodes_right):
-            rhs = quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left)) + layer.intercept[j]
+            rhs = (
+                quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left))
+                + layer.intercept[j]
+            )
             name = layer.unique_naming_prefix + f"affine_{i}_{j}"
             affine_cons[i][j] = layer.scip_model.addCons(layer.output[i][j] == rhs, name=name)
             # Propagate bounds
             if propagation_success:
-                if abs(lbs[i][j]) < 10 ** 5:
+                if abs(lbs[i][j]) < 10**5:
                     output_lb = layer.output[i][j].getLbOriginal()
                     layer.scip_model.chgVarLb(layer.output[i][j], max(lbs[i][j], output_lb))
-                if abs(ubs[i][j]) < 10 ** 5:
+                if abs(ubs[i][j]) < 10**5:
                     output_ub = layer.output[i][j].getUbOriginal()
                     layer.scip_model.chgVarUb(layer.output[i][j], min(ubs[i][j], output_ub))
 
@@ -81,8 +85,9 @@ def add_relu_activation_constraint_layer(layer, slack, activation_only=True):
     cons_with_slack = np.zeros((n_samples, n_nodes_right), dtype=object)
 
     # Perform some basic activity based bound propagation
-    propagation_success, lbs, ubs = propagate_identity_bounds(layer, n_samples, n_nodes_left, n_nodes_right,
-                                                              activation_only)
+    propagation_success, lbs, ubs = propagate_identity_bounds(
+        layer, n_samples, n_nodes_left, n_nodes_right, activation_only
+    )
 
     # Iterate over all nodes on the right hand side and create the appropriate constraints
     for i in range(n_samples):
@@ -91,24 +96,33 @@ def add_relu_activation_constraint_layer(layer, slack, activation_only=True):
                 layer.scip_model.chgVarLb(layer.output[i][j], 0)
             name = layer.unique_naming_prefix + f"slack_{i}_{j}"
             if activation_only:
-                cons_with_slack[i][j] = layer.scip_model.addCons(layer.output[i][j] == layer.input[i][j] + slack[i][j],
-                                                                 name=name)
+                cons_with_slack[i][j] = layer.scip_model.addCons(
+                    layer.output[i][j] == layer.input[i][j] + slack[i][j], name=name
+                )
             else:
                 rhs = quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left))
                 rhs += layer.intercept[j] + slack[i][j]
-                cons_with_slack[i][j] = layer.scip_model.addCons(layer.output[i][j] == rhs, name=name)
+                cons_with_slack[i][j] = layer.scip_model.addCons(
+                    layer.output[i][j] == rhs, name=name
+                )
             # Propagate bounds
             if propagation_success:
-                if abs(lbs[i][j]) < 10 ** 5:
+                if abs(lbs[i][j]) < 10**5:
                     output_lb = layer.output[i][j].getLbOriginal()
-                    layer.scip_model.chgVarLb(layer.output[i][j], max(max(lbs[i][j], 0), output_lb))
+                    layer.scip_model.chgVarLb(
+                        layer.output[i][j], max(max(lbs[i][j], 0), output_lb)
+                    )
                     layer.scip_model.chgVarUb(slack[i][j], max(-lbs[i][j], 0))
                 if abs(ubs[i][j]) < 10**5:
                     output_ub = layer.output[i][j].getUbOriginal()
-                    layer.scip_model.chgVarUb(layer.output[i][j], min(max(ubs[i][j], 0), output_ub))
+                    layer.scip_model.chgVarUb(
+                        layer.output[i][j], min(max(ubs[i][j], 0), output_ub)
+                    )
                     layer.scip_model.chgVarLb(slack[i][j], max(-ubs[i][j], 0))
             name = layer.unique_naming_prefix + f"sos_{i}_{j}"
-            sos_cons[i][j] = layer.scip_model.addConsSOS1([layer.output[i][j], slack[i][j]], name=name)
+            sos_cons[i][j] = layer.scip_model.addConsSOS1(
+                [layer.output[i][j], slack[i][j]], name=name
+            )
 
     return cons_with_slack, sos_cons
 
@@ -149,9 +163,14 @@ def add_sigmoid_activation_constraint_layer(layer, activation_only=True):
             if activation_only:
                 x = layer.input[i][j]
             else:
-                x = quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left)) + layer.intercept[j]
+                x = (
+                    quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left))
+                    + layer.intercept[j]
+                )
             name = layer.unique_naming_prefix + f"sigmoid_{i}_{j}"
-            sigmoid_cons[i][j] = layer.scip_model.addCons(layer.output[i][j] == 1 / (1 + exp(-x)), name=name)
+            sigmoid_cons[i][j] = layer.scip_model.addCons(
+                layer.output[i][j] == 1 / (1 + exp(-x)), name=name
+            )
 
     return sigmoid_cons
 
@@ -192,10 +211,14 @@ def add_tanh_activation_constraint_layer(layer, activation_only=True):
             if activation_only:
                 x = layer.input[i][j]
             else:
-                x = quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left)) + layer.intercept[j]
+                x = (
+                    quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left))
+                    + layer.intercept[j]
+                )
             name = layer.unique_naming_prefix + f"tanh_{i}_{j}"
-            tanh_cons[i][j] = layer.scip_model.addCons(layer.output[i][j] == (1 - exp(-2 * x)) / (1 + exp(-2 * x)),
-                                                       name=name)
+            tanh_cons[i][j] = layer.scip_model.addCons(
+                layer.output[i][j] == (1 - exp(-2 * x)) / (1 + exp(-2 * x)), name=name
+            )
 
     return tanh_cons
 
@@ -229,7 +252,12 @@ def propagate_identity_bounds(layer, n_samples, n_nodes_left, n_nodes_right, act
     """
 
     ubs = np.zeros((n_samples, n_nodes_right))
-    lbs = np.zeros((n_samples, n_nodes_right,))
+    lbs = np.zeros(
+        (
+            n_samples,
+            n_nodes_right,
+        )
+    )
     input_lbs = np.zeros((n_samples, n_nodes_left))
     input_ubs = np.zeros((n_samples, n_nodes_left))
     for i in range(n_samples):

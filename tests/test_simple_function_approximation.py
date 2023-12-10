@@ -2,9 +2,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import TensorDataset, DataLoader
 from pyscipopt import Model
 from sklearn.neural_network import MLPRegressor
+from torch.utils.data import DataLoader, TensorDataset
+
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
 """
@@ -13,7 +14,7 @@ There are two non-linear functions that have been approximated by neural network
 We want to minimise the value of the first function, while satisfying some equality of the second.
 
 This is a simple example to test the performance of the MIP formulations for NNs
-with ReLU activation functions: 
+with ReLU activation functions:
 @article{grimstad2019relu,
   title={ReLU networks as surrogate models in mixed-integer linear programs},
   author={Grimstad, Bjarne and Andersson, Henrik},
@@ -22,7 +23,7 @@ with ReLU activation functions:
   pages={106580},
   year={2019},
   publisher={Elsevier}
-} 
+}
 
 Let there be two random quadratic functions:
 xQ_1x + A_1x + c_1
@@ -35,7 +36,7 @@ Let const be some constant value in the range of the randomly generated quadrati
 The MIP model is:
 
 g(x) = const
-min(f(x)) 
+min(f(x))
 """
 
 

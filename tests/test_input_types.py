@@ -1,21 +1,32 @@
-import pytest
-
 import numpy as np
-
+import pytest
 from pyscipopt import Model
-
-from sklearn.datasets import load_iris, load_diabetes, load_breast_cancer
-from sklearn.datasets import make_regression
-from sklearn.linear_model import LinearRegression, LogisticRegression, ElasticNet, Lasso, Ridge
-from sklearn.cross_decomposition import PLSRegression, PLSCanonical
-from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
-from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from sklearn.neural_network import MLPRegressor, MLPClassifier
+from sklearn.cross_decomposition import PLSCanonical, PLSRegression
+from sklearn.datasets import (
+    load_breast_cancer,
+    load_diabetes,
+    load_iris,
+    make_regression,
+)
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    GradientBoostingRegressor,
+    RandomForestClassifier,
+    RandomForestRegressor,
+)
+from sklearn.linear_model import (
+    ElasticNet,
+    Lasso,
+    LinearRegression,
+    LogisticRegression,
+    Ridge,
+)
+from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from src.pyscipopt_ml import add_predictor_constr
 
-""" 
+"""
 Tests for the various possible input types of each ML Model from sklearn.
 load_iris is used for multi-classification, load_diabetes used for regression,
 load_breast_cancer used for single class classification, and laod_wine is used for

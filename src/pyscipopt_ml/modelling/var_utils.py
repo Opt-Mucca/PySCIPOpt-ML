@@ -33,7 +33,7 @@ def create_vars(scip_model, shape, vtype, lb=None, ub=None, name_prefix=""):
     scip_vars = np.zeros(shape, dtype=object)
     it = np.nditer(scip_vars, flags=["multi_index", "refs_ok"])
     for _ in it:
-        idx_list = str(it.multi_index).strip(')').strip('(').split(',')
+        idx_list = str(it.multi_index).strip(")").strip("(").split(",")
         idx_string = ""
         for idx in idx_list:
             if idx == "":

@@ -3,14 +3,19 @@
 
 import numpy as np
 
-from .xgbgetter import XGBgetter
-
 from ..modelling import AbstractPredictorConstr
 from ..modelling.gradient_boosting import aggregated_estimator_formulation
+from .xgbgetter import XGBgetter
 
 
 def add_xgbregressor_constr(
-        scip_model, xgboost_regressor, input_vars, output_vars=None, unique_naming_prefix="", epsilon=0.0, **kwargs
+    scip_model,
+    xgboost_regressor,
+    input_vars,
+    output_vars=None,
+    unique_naming_prefix="",
+    epsilon=0.0,
+    **kwargs
 ):
     """Formulate xgboost_regressor (gradient boosting decision tree) as constraints into a pyscipopt Model.
 
@@ -63,7 +68,13 @@ def add_xgbregressor_constr(
 
 
 def add_xgbclassifier_constr(
-        scip_model, xgboost_classifier, input_vars, output_vars=None, unique_naming_prefix="", epsilon=0.0, **kwargs
+    scip_model,
+    xgboost_classifier,
+    input_vars,
+    output_vars=None,
+    unique_naming_prefix="",
+    epsilon=0.0,
+    **kwargs
 ):
     """Formulate xgboost_classifier (gradient boosting decision tree) as constraints into a pyscipopt Model.
 
@@ -117,7 +128,13 @@ def add_xgbclassifier_constr(
 
 
 def add_xgbregressor_rf_constr(
-        scip_model, xgboost_regressor, input_vars, output_vars=None, unique_naming_prefix="", epsilon=0.0, **kwargs
+    scip_model,
+    xgboost_regressor,
+    input_vars,
+    output_vars=None,
+    unique_naming_prefix="",
+    epsilon=0.0,
+    **kwargs
 ):
     """Formulate xgboost_regressor (random forest) as constraints into a pyscipopt Model.
 
@@ -170,7 +187,13 @@ def add_xgbregressor_rf_constr(
 
 
 def add_xgbclassifier_rf_constr(
-        scip_model, xgboost_classifier, input_vars, output_vars=None, unique_naming_prefix="", epsilon=0.0, **kwargs
+    scip_model,
+    xgboost_classifier,
+    input_vars,
+    output_vars=None,
+    unique_naming_prefix="",
+    epsilon=0.0,
+    **kwargs
 ):
     """Formulate xgboost_classifier (random forest) as constraints into a pyscipopt Model.
 
@@ -231,8 +254,16 @@ class XGBoostConstr(XGBgetter, AbstractPredictorConstr):
     """
 
     def __init__(
-            self, scip_model, predictor, input_vars, output_vars, unique_naming_prefix="", epsilon=0.0, aggr="sum",
-            classification=False, **kwargs
+        self,
+        scip_model,
+        predictor,
+        input_vars,
+        output_vars,
+        unique_naming_prefix="",
+        epsilon=0.0,
+        aggr="sum",
+        classification=False,
+        **kwargs
     ):
         XGBgetter.__init__(self, predictor, input_vars, **kwargs)
         self.estimators_ = []
@@ -257,14 +288,28 @@ class XGBoostConstr(XGBgetter, AbstractPredictorConstr):
     def _mip_model(self, **kwargs):
 
         # Extract the information on the trained model and create new variables
-        trees, constant, tree_vars = self.extract_raw_data_and_create_tree_vars(epsilon=self.epsilon)
+        trees, constant, tree_vars = self.extract_raw_data_and_create_tree_vars(
+            epsilon=self.epsilon
+        )
         self._created_vars.append(tree_vars)
 
         # Construct each individual tree estimator and the constraints that link them
         constant = np.array([constant for _ in range(self.output.shape[-1])])
         estimators, created_vars, created_cons = aggregated_estimator_formulation(
-            self.scip_model, self.input, self.output, tree_vars, trees, constant, 1, self.predictor.n_estimators,
-            self.unique_naming_prefix, self.epsilon, self.aggr, self.classification, **kwargs)
+            self.scip_model,
+            self.input,
+            self.output,
+            tree_vars,
+            trees,
+            constant,
+            1,
+            self.predictor.n_estimators,
+            self.unique_naming_prefix,
+            self.epsilon,
+            self.aggr,
+            self.classification,
+            **kwargs,
+        )
 
         for estimator in estimators:
             self.estimators_.append(estimator)

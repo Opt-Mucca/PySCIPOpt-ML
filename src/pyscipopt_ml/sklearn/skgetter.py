@@ -1,13 +1,11 @@
 """Implements some utility tools for all scikit-learn objects."""
 
 import numpy as np
-
 from sklearn.base import is_classifier
 from sklearn.utils.validation import check_is_fitted
 
-from ..modelling import AbstractPredictorConstr
-
 from ..exceptions import NoSolution
+from ..modelling import AbstractPredictorConstr
 
 
 class SKgetter(AbstractPredictorConstr):

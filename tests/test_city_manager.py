@@ -2,23 +2,24 @@ import numpy as np
 from pyscipopt import Model
 from sklearn.tree import DecisionTreeRegressor
 from utils import read_csv_to_dict
+
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
 """
-In this scenario we take the point of view of a city manager in Poland. 
+In this scenario we take the point of view of a city manager in Poland.
 
-We have access to open source data 
+We have access to open source data
 (thanks to: https://www.kaggle.com/datasets/krzysztofjamroz/apartment-prices-in-poland),
 for which we have built a predictor. The predictor takes as input a variety of apartment features,
 and outputs the price of the apartment, which we consider as a proxy for living quality.
 
 The goal of this MIP is to maximise the living quality of the randomly sampled 50 residents by
 building two new schools, clinics, post offices, kindergartens, restaurants,
-and pharmacies, as well as a single college. For the sake simplicity we assume the 
-closest access for all these residents to all these facilities is over 10km away. 
+and pharmacies, as well as a single college. For the sake simplicity we assume the
+closest access for all these residents to all these facilities is over 10km away.
 To further simplify the MIP we measure distance via the L1 norm at all times.
 
-Let f to be the ML predictor. Let I be the index set of residents and their apartments. 
+Let f to be the ML predictor. Let I be the index set of residents and their apartments.
 Let J be the index of the building type and nJ be the amount of that building type that will be built.
 Let k be the index set of the imaginary 2D grid that will be used for L1 distance.
 
@@ -26,7 +27,7 @@ Let a_loc[i][k] be the location of the apartment i in dimension k
 
 Let build[J][nJ][k] be the variables representing the location of the buildings.
 Let x[I][J] be the min distance between the buildings and apartments
-Let y[i] be the price of the apartment 
+Let y[i] be the price of the apartment
 
 The MIP we model below in a city of size 5kmx5km is:
 

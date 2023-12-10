@@ -5,17 +5,17 @@ def sklearn_convertors():
     """Collect convertors for Scikit-learn objects."""
     if "sklearn" in sys.modules:
         from .sklearn import (
-            add_linear_regression_constr,
-            add_logistic_regression_constr,
             add_decision_tree_classifier_constr,
             add_decision_tree_regressor_constr,
-            add_gradient_boosting_regressor_constr,
             add_gradient_boosting_classifier_constr,
-            add_random_forest_regressor_constr,
-            add_random_forest_classifier_constr,
-            add_mlp_regressor_constr,
+            add_gradient_boosting_regressor_constr,
+            add_linear_regression_constr,
+            add_logistic_regression_constr,
             add_mlp_classifier_constr,
+            add_mlp_regressor_constr,
             add_pls_regression_constr,
+            add_random_forest_classifier_constr,
+            add_random_forest_regressor_constr,
         )
 
         return {
@@ -58,10 +58,10 @@ def xgboost_convertors():
         import xgboost as xgb  # pylint: disable=import-outside-toplevel
 
         from .xgboost import (  # pylint: disable=import-outside-toplevel
-            add_xgbregressor_constr,
             add_xgbclassifier_constr,
-            add_xgbregressor_rf_constr,
             add_xgbclassifier_rf_constr,
+            add_xgbregressor_constr,
+            add_xgbregressor_rf_constr,
         )
 
         return {
@@ -79,8 +79,8 @@ def lightgbm_convertors():
         import lightgbm as lgb  # pylint: disable=import-outside-toplevel
 
         from .lightgbm import (  # pylint: disable=import-outside-toplevel
-            add_lgbregressor_constr,
             add_lgbclassifier_constr,
+            add_lgbregressor_constr,
         )
 
         return {

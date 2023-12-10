@@ -1,13 +1,13 @@
 import pdb
 
 import numpy as np
-from pyscipopt import Model, quicksum
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from xgboost import XGBRegressor, XGBRFRegressor
 from lightgbm import LGBMRegressor
+from pyscipopt import Model, quicksum
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from utils import read_csv_to_dict
-from src.pyscipopt_ml.add_predictor import add_predictor_constr
+from xgboost import XGBRegressor, XGBRFRegressor
 
+from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
 """
 In this scenario we take the point of view of a wine manufacturer.
@@ -29,7 +29,7 @@ and determines the quality of the wine. This can either be modelled as a regress
 with the quality being in the range [0,1], or some quality threshold can be set,
 and the task made into a classification task.
 
-The goal of this MIP is to create a diverse bouquet of wines with the highest average 
+The goal of this MIP is to create a diverse bouquet of wines with the highest average
 quality. To do this, we make an assumption that the features of the grapes and resulting wine
 are identical. In this MIP we can purchase grapes from a set of suppliers, all of whom
 have grapes that by themselves would result in low quality wine. We can blend the grapes, however,

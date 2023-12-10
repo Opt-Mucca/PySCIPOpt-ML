@@ -3,15 +3,19 @@ a PySCIPOpt Model."""
 
 import numpy as np
 
-from .lgbgetter import LGBgetter
-
 from ..modelling import AbstractPredictorConstr
-
 from ..modelling.gradient_boosting import aggregated_estimator_formulation
+from .lgbgetter import LGBgetter
 
 
 def add_lgbregressor_constr(
-        scip_model, lightgbm_regressor, input_vars, output_vars=None, unique_naming_prefix="", epsilon=0.0, **kwargs
+    scip_model,
+    lightgbm_regressor,
+    input_vars,
+    output_vars=None,
+    unique_naming_prefix="",
+    epsilon=0.0,
+    **kwargs
 ):
     """Formulate lightgbm_regressor as constraints into a pyscipopt Model. Accommodates both Gradient Boosting
     Decision Trees and Random Forests as boosting types.
@@ -64,7 +68,13 @@ def add_lgbregressor_constr(
 
 
 def add_lgbclassifier_constr(
-        scip_model, lightgbm_classifier, input_vars, output_vars=None, unique_naming_prefix="", epsilon=0.0, **kwargs
+    scip_model,
+    lightgbm_classifier,
+    input_vars,
+    output_vars=None,
+    unique_naming_prefix="",
+    epsilon=0.0,
+    **kwargs
 ):
     """Formulate lightgbm_classifier as constraints into a pyscipopt Model. Accommodates both Gradient Boosting
     Decision Trees and Random Forests as boosting types.
@@ -124,8 +134,15 @@ class LightGBMConstr(LGBgetter, AbstractPredictorConstr):
     """
 
     def __init__(
-            self, scip_model, predictor, input_vars, output_vars, unique_naming_prefix="", epsilon=0.0,
-            classification=False, **kwargs
+        self,
+        scip_model,
+        predictor,
+        input_vars,
+        output_vars,
+        unique_naming_prefix="",
+        epsilon=0.0,
+        classification=False,
+        **kwargs
     ):
         LGBgetter.__init__(self, predictor, input_vars, **kwargs)
         self.estimators_ = []
@@ -153,8 +170,20 @@ class LightGBMConstr(LGBgetter, AbstractPredictorConstr):
         constant = np.zeros((self.output.shape[-1],))
         aggr = "sum" if self.predictor.boosting_type == "gbdt" else "avg"
         estimators, created_vars, created_cons = aggregated_estimator_formulation(
-            self.scip_model, self.input, self.output, tree_vars, trees, constant, 1, self.predictor.n_estimators,
-            self.unique_naming_prefix, self.epsilon, aggr, self.classification, **kwargs)
+            self.scip_model,
+            self.input,
+            self.output,
+            tree_vars,
+            trees,
+            constant,
+            1,
+            self.predictor.n_estimators,
+            self.unique_naming_prefix,
+            self.epsilon,
+            aggr,
+            self.classification,
+            **kwargs,
+        )
 
         for estimator in estimators:
             self.estimators_.append(estimator)

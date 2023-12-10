@@ -12,6 +12,7 @@
 #
 import os
 import sys
+
 # sys.path.insert(0, os.path.abspath('.'))
 
 
@@ -65,7 +66,7 @@ intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
     "torch": ("https://pytorch.org/docs/master/", None),
     "xgb": ("https://xgboost.readthedocs.io/en/stable/", None),
-    "lgb": ("https://lightgbm.readthedocs.io/en/stable/", None)
+    "lgb": ("https://lightgbm.readthedocs.io/en/stable/", None),
 }
 
 extlinks = {

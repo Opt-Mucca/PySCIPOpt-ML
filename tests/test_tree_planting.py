@@ -2,17 +2,16 @@ import numpy as np
 from pyscipopt import Model, quicksum
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
-
-from src.pyscipopt_ml.add_predictor import add_predictor_constr
 from utils import read_csv_to_dict
 
+from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
 """
 In this scenario we take the point of view of an agency tasked with replanting a stretch of land.
 
 We have access to open source data (thanks to:
 @article{wood2023tree,
-  title={Tree seedling functional traits mediate plant-soil 
+  title={Tree seedling functional traits mediate plant-soil
   feedback survival responses across a gradient of light availability},
   author={Wood, Katherine EA and Kobe, Richard K and Ib{\'a}{\~n}ez, In{\'e}s and McCarthy-Neumann, Sarah},
   journal={Plos one},
@@ -24,9 +23,9 @@ We have access to open source data (thanks to:
 }
 Data accessed here: https://www.kaggle.com/datasets/yekenot/tree-survival-prediction)
 for which we have built a predictor. The predictor takes as input a variety of features ranging
-from soil properties to light properties, and determines the survival rate of the planted tree. 
+from soil properties to light properties, and determines the survival rate of the planted tree.
 
-The goal of this MIP is to plant a set of trees such that some budget constraints are satisfied, 
+The goal of this MIP is to plant a set of trees such that some budget constraints are satisfied,
 some diversity criteria on planted trees is satisfied, and the survival rate of the
 planted trees is maximised. In the stretch of land where the trees are planted, the location
 contains static features such as predicted sunlight, but the planter has the chance to sterilise sections of soil.

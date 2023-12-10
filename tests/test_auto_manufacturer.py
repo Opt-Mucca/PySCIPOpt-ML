@@ -2,8 +2,8 @@ import numpy as np
 from pyscipopt import Model
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from utils import read_csv_to_dict
-from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
+from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
 """
 In this scenario we take the point of view of an auto manufacturer.
@@ -15,9 +15,9 @@ These properties are dependent on each other, so the output of one predictor can
 input into another predictor.
 
 The goal of this MIP is to design a vehicle that will sell the maximum amount of units possible,
-while being sufficiently different from any of the other most popular vehicles. 
+while being sufficiently different from any of the other most popular vehicles.
 Additional constraints are added to ensure that the designed vehicle has a high resell value,
-and is eco-friendly. 
+and is fuel efficient.
 
 Let x be the vector of static features of the designed vehicle, i.e., those that cannot be changed.
 Price, resell value, and amount sold for instance are not entirely controllable, but engine size is.
@@ -42,7 +42,7 @@ neg_slack[v][i] <= (x[i].UB - x[i].LB) * (1 - bin_slack[v][i]) for all V, I
 sum_diff[v] = sum_i (pos_slack[v][i] + neg_slack[v][i]) / (x[i].UB - x[i].LB) for all V
 sum_diff[v] >= 2 for all V
 
-x[i] >= e where i is the eco-efficiency index
+x[i] >= e where i is the fuel efficiency index
 
 price = g(x)
 amount_sold = f(x, price)
@@ -215,9 +215,9 @@ def build_and_optimise_auto_manufacturer(
         ),
     ]
 
-    # Add constraints that the resale value of the car must be sufficiently large and that the car is eco-friendly
+    # Add constraints that the resale value of the car must be sufficiently large and that the car is fuel efficient
     scip.addCons(resale_vars[0][0] >= min_resale_ratio * price_vars[0][0], name="min_resale")
-    scip.addCons(feature_vars[0][8] >= min_fuel_efficiency, name="eco_friendly")
+    scip.addCons(feature_vars[0][8] >= min_fuel_efficiency, name="fuel_efficient")
 
     scip.setObjective(-amount_sold_vars[0][0] + 10000)
 

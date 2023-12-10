@@ -2,24 +2,25 @@ import numpy as np
 from pyscipopt import Model
 from sklearn.neural_network import MLPClassifier
 from utils import read_csv_to_dict
+
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
 """
-In this scenario we take the point of view of a health organisation. 
+In this scenario we take the point of view of a health organisation.
 This health organisation has a limited amount of supplies for treating water,
 and they have the goal to treat as much water as possible such that the treated water
 becomes drinkable. Regrettably, they lack resources to explicitly check the potability,
 and must rely on some ML model that decides if the water is safe to drink or not.
 
-We have access to open source data 
+We have access to open source data
 (thanks to: https://github.com/MainakRepositor/Datasets/tree/master and
 https://www.kaggle.com/datasets/uom190346a/water-quality-and-potability),
-for which we can build predictors. The predictor takes as input a variety of features 
+for which we can build predictors. The predictor takes as input a variety of features
 about the water, and decides whether or not it is safe to drink.
 
 The goal of this MIP is to treat the samples of water s.t. the largest amount
 of water becomes drinkable. There are some constraints on which features can be treated,
-due to to available resources. 
+due to to available resources.
 
 Let I be the index set of the water samples
 Let J be the index set of the features of the water

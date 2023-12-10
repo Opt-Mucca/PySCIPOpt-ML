@@ -1,12 +1,10 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-
 from pyscipopt.scip import Constraint, Variable
 
-from .var_utils import create_vars
-
 from ..exceptions import NoSolution, ParameterError
+from .var_utils import create_vars
 
 
 class AbstractPredictorConstr(ABC):

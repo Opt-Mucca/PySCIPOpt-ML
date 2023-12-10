@@ -2,20 +2,31 @@
 
 import numpy as np
 
-
+from ...sklearn.decision_tree import (
+    add_decision_tree_classifier_constr,
+    add_decision_tree_regressor_constr,
+)
 from ..base_predictor_constraint import AbstractPredictorConstr
-
 from ..classification.argmax_model import argmax_bound_formulation
-
 from ..decision_tree import leaf_formulation
-
-from ...sklearn.decision_tree import add_decision_tree_regressor_constr, add_decision_tree_classifier_constr
-
 from ..var_utils import create_vars
 
 
-def aggregated_estimator_formulation(scip_model, _input, output, tree_vars, trees, constant, lr, n_estimators,
-                                     unique_naming_prefix, epsilon, aggr, classification, **kwargs):
+def aggregated_estimator_formulation(
+    scip_model,
+    _input,
+    output,
+    tree_vars,
+    trees,
+    constant,
+    lr,
+    n_estimators,
+    unique_naming_prefix,
+    epsilon,
+    aggr,
+    classification,
+    **kwargs,
+):
     """
     Creates the model that represents the aggregation of estimators into a single output.
     This function is used exclusively for the case where the estimators are decision trees, and the larger
@@ -42,7 +53,7 @@ def aggregated_estimator_formulation(scip_model, _input, output, tree_vars, tree
     unique_naming_prefix : str
         The unique naming prefix string that goes before all variables and constraints that are constructed by SCIP
     epsilon : float
-        The epsilon that is used for each decision tree model. See 
+        The epsilon that is used for each decision tree model. See
         :py:func:`pyscipopt_ml.modelling.decision_tree.leaf_formulation`.
     aggr : str, "sum" or "avg"
         The aggregation method used in the formulation. Either the estimators are averages or summed.
@@ -65,21 +76,45 @@ def aggregated_estimator_formulation(scip_model, _input, output, tree_vars, tree
     outdim = output.shape[-1]
 
     # Create the individual tree estimators
-    estimators = create_tree_estimators(scip_model, _input, tree_vars, trees, n_estimators, outdim,
-                                        unique_naming_prefix, epsilon, False, **kwargs)
+    estimators = create_tree_estimators(
+        scip_model,
+        _input,
+        tree_vars,
+        trees,
+        n_estimators,
+        outdim,
+        unique_naming_prefix,
+        epsilon,
+        False,
+        **kwargs,
+    )
 
     # Aggregate the trees over the output dimension
     aggregate_tree_output = aggregate_estimator_outputs(tree_vars, lr, constant, aggr=aggr)
 
     # Formulate the appropriate constraints
-    created_vars, created_cons = create_aggregation_constraints(scip_model, aggregate_tree_output, output, n_samples,
-                                                                outdim, unique_naming_prefix, classification)
+    created_vars, created_cons = create_aggregation_constraints(
+        scip_model,
+        aggregate_tree_output,
+        output,
+        n_samples,
+        outdim,
+        unique_naming_prefix,
+        classification,
+    )
 
     return estimators, created_vars, created_cons
 
 
-def create_aggregation_constraints(scip_model, aggregate_tree_output, output, n_samples, outdim, unique_naming_prefix,
-                                   classification):
+def create_aggregation_constraints(
+    scip_model,
+    aggregate_tree_output,
+    output,
+    n_samples,
+    outdim,
+    unique_naming_prefix,
+    classification,
+):
     """
     Creates the variables and constraints that link the output of the predictor itself and the aggregation of each
     estimator.
@@ -117,11 +152,14 @@ def create_aggregation_constraints(scip_model, aggregate_tree_output, output, n_
         for i in range(n_samples):
             for j in range(outdim):
                 name = unique_naming_prefix + f"tree_sum_{i}_{j}"
-                sum_tree_cons[i][j] = scip_model.addCons(output[i][j] == aggregate_tree_output[i][j], name=name)
+                sum_tree_cons[i][j] = scip_model.addCons(
+                    output[i][j] == aggregate_tree_output[i][j], name=name
+                )
         created_cons.append(sum_tree_cons)
     else:
-        new_vars, new_cons = argmax_bound_formulation(scip_model, aggregate_tree_output,
-                                                      output, unique_naming_prefix)
+        new_vars, new_cons = argmax_bound_formulation(
+            scip_model, aggregate_tree_output, output, unique_naming_prefix
+        )
         for added_var in new_vars:
             created_vars.append(added_var)
         for added_cons in new_cons:
@@ -154,8 +192,13 @@ def aggregate_estimator_outputs(_output, lr, constant, aggr="sum"):
         The new aggregated output per dimension over all estimators. Traditionally a sum over one dimension.
 
     """
-    assert aggr in ["sum", "avg"], f"Aggregation type {aggr} is neither sum or avg. No model exists."
-    assert _output.ndim == 3, f"Aggregating estimator outputs of invalid dimension. {_output.ndim} != 3"
+    assert aggr in [
+        "sum",
+        "avg",
+    ], f"Aggregation type {aggr} is neither sum or avg. No model exists."
+    assert (
+        _output.ndim == 3
+    ), f"Aggregating estimator outputs of invalid dimension. {_output.ndim} != 3"
 
     n_samples = _output.shape[0]
     outdim = _output.shape[-1]
@@ -173,8 +216,18 @@ def aggregate_estimator_outputs(_output, lr, constant, aggr="sum"):
     return aggregated_output
 
 
-def create_tree_estimators(scip_model, _input, tree_vars, trees, n_estimators, outdim, unique_naming_prefix, epsilon,
-                           classification, **kwargs):
+def create_tree_estimators(
+    scip_model,
+    _input,
+    tree_vars,
+    trees,
+    n_estimators,
+    outdim,
+    unique_naming_prefix,
+    epsilon,
+    classification,
+    **kwargs,
+):
     """
     Creates individual tree estimator models for each decision tree.
 
@@ -226,8 +279,17 @@ def create_tree_estimators(scip_model, _input, tree_vars, trees, n_estimators, o
     return estimators
 
 
-def create_sklearn_tree_estimators(scip_model, predictor, _input, n_samples, outdim, unique_naming_prefix,
-                                   classification, gbdt_or_rf="gbdt", **kwargs):
+def create_sklearn_tree_estimators(
+    scip_model,
+    predictor,
+    _input,
+    n_samples,
+    outdim,
+    unique_naming_prefix,
+    classification,
+    gbdt_or_rf="gbdt",
+    **kwargs,
+):
     """
     Create individual estimators for each decision tree for decision tree based ensemble predictors from SKLearn.
 
@@ -260,7 +322,9 @@ def create_sklearn_tree_estimators(scip_model, predictor, _input, n_samples, out
 
     # Create variables to represent the output of each decision tree (i.e. estimator)
     shape = (n_samples, predictor.n_estimators, outdim)
-    tree_vars = create_vars(scip_model, shape=shape, vtype='C', lb=None, name_prefix=unique_naming_prefix + "tree_var")
+    tree_vars = create_vars(
+        scip_model, shape=shape, vtype="C", lb=None, name_prefix=unique_naming_prefix + "tree_var"
+    )
 
     # Create each estimator. In the case of GBDT, there are (n_estimators, outdim) many estimators, while for RF
     # there are (outdim,) many estimators. In the case of GBDT for classification each individual DT is regression.
@@ -272,7 +336,12 @@ def create_sklearn_tree_estimators(scip_model, predictor, _input, n_samples, out
                 tree = predictor.estimators_[i][j]
                 estimators.append(
                     add_decision_tree_regressor_constr(
-                        scip_model, tree, _input, tree_vars[:, i, j].reshape((-1, 1)), unique_prefix, **kwargs
+                        scip_model,
+                        tree,
+                        _input,
+                        tree_vars[:, i, j].reshape((-1, 1)),
+                        unique_prefix,
+                        **kwargs,
                     )
                 )
     elif gbdt_or_rf == "rf":
@@ -297,7 +366,15 @@ def create_sklearn_tree_estimators(scip_model, predictor, _input, n_samples, out
 
 class TreeEstimator(AbstractPredictorConstr):
     def __init__(
-        self, scip_model, tree, input_vars, output_vars, unique_naming_prefix, epsilon, classification, **kwargs
+        self,
+        scip_model,
+        tree,
+        input_vars,
+        output_vars,
+        unique_naming_prefix,
+        epsilon,
+        classification,
+        **kwargs,
     ):
         self._default_name = "tree"
         self._tree = tree
@@ -316,7 +393,7 @@ class TreeEstimator(AbstractPredictorConstr):
             self._tree,
             self.unique_naming_prefix,
             self._epsilon,
-            classification=self._classification
+            classification=self._classification,
         )
 
         for new_var in new_vars:

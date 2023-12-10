@@ -2,14 +2,13 @@
 :external+sklearn:py:class:`sklearn.linear_model.LogisticRegression` in a
 PySCIPOpt Model.
 """
+import numpy as np
 from pyscipopt import exp, quicksum
 
-import numpy as np
-
-from .base_regression import BaseSKlearnRegressionConstr
-from ..exceptions import ParameterError, NoModel
-from ..modelling.var_utils import create_vars
+from ..exceptions import NoModel, ParameterError
 from ..modelling.classification import argmax_bound_formulation
+from ..modelling.var_utils import create_vars
+from .base_regression import BaseSKlearnRegressionConstr
 
 
 def add_logistic_regression_constr(

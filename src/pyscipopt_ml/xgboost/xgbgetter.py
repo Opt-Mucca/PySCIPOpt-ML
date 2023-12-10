@@ -3,7 +3,6 @@
 import json
 
 import numpy as np
-
 from sklearn.base import is_classifier
 
 from ..exceptions import NoModel, NoSolution, ParameterError

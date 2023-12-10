@@ -264,4 +264,3 @@ Random Forests, we would do the following:
         raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
 
     return scip
-

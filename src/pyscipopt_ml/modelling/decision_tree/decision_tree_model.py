@@ -2,7 +2,6 @@
 import pdb
 
 import numpy as np
-
 from pyscipopt import quicksum
 
 from ..var_utils import create_vars

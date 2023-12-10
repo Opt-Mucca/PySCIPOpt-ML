@@ -1,23 +1,27 @@
 """Bases classes for modeling neural network layers."""
 
-from .activations import add_identity_activation_constraint_layer, add_relu_activation_constraint_layer, \
-    add_sigmoid_activation_constraint_layer, add_tanh_activation_constraint_layer
-
-from .layers import ActivationLayer, DenseLayer
-
 from ..base_predictor_constraint import AbstractPredictorConstr
+from .activations import (
+    add_identity_activation_constraint_layer,
+    add_relu_activation_constraint_layer,
+    add_sigmoid_activation_constraint_layer,
+    add_tanh_activation_constraint_layer,
+)
+from .layers import ActivationLayer, DenseLayer
 
 
 class BaseNNConstr(AbstractPredictorConstr):
     """Base class for inserting a neural network into SCIP."""
 
-    def __init__(self, scip_model, predictor, input_vars, output_vars, unique_naming_prefix, **kwargs):
+    def __init__(
+        self, scip_model, predictor, input_vars, output_vars, unique_naming_prefix, **kwargs
+    ):
         self.predictor = predictor
         self.act_dict = {
             "relu": add_relu_activation_constraint_layer,
             "identity": add_identity_activation_constraint_layer,
             "tanh": add_tanh_activation_constraint_layer,
-            "logistic": add_sigmoid_activation_constraint_layer
+            "logistic": add_sigmoid_activation_constraint_layer,
         }
         self._layers = []
 
@@ -85,7 +89,12 @@ class BaseNNConstr(AbstractPredictorConstr):
             A unique naming prefix that is used before all variable and constraint names.
         """
         layer = ActivationLayer(
-            self.scip_model, activation_vars, input_vars, activation, unique_naming_prefix, **kwargs
+            self.scip_model,
+            activation_vars,
+            input_vars,
+            activation,
+            unique_naming_prefix,
+            **kwargs,
         )
         self._layers.append(layer)
         return layer

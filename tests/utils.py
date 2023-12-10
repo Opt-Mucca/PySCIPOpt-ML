@@ -20,7 +20,7 @@ def read_csv_to_dict(csv_file_path):
     data_dict = {}
 
     # Open the CSV file
-    with open(csv_file_path, 'r') as file:
+    with open(csv_file_path, "r") as file:
         # Create a CSV reader object
         csv_reader = csv.DictReader(file)
 

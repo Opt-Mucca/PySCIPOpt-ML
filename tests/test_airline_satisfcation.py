@@ -2,13 +2,14 @@ import numpy as np
 from pyscipopt import Model
 from sklearn.neural_network import MLPClassifier
 from utils import read_csv_to_dict
+
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
 """
 In this scenario we take the point of view of a conglomeration of airlines.
-This set of airlines is worried about current customer satisfaction levels, 
+This set of airlines is worried about current customer satisfaction levels,
 and has assigned a budget to improve the predicted levels. Each airline, however,
-has its own customer base, and incentives for which bit of the flight experience to 
+has its own customer base, and incentives for which bit of the flight experience to
 improve. Using the budget, maximise the total improved customer satisfaction levels.
 """
 
