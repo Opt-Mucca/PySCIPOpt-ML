@@ -111,13 +111,13 @@ def build_and_optimise_auto_manufacturer(
     else:
         reg_sales = RandomForestRegressor(
             n_estimators=n_estimators, max_depth=max_depth, random_state=seed
-        ).fit(np.concatenate((X, price), axis=1), amount_sales)
+        ).fit(np.concatenate((X, price), axis=1), amount_sales.reshape(-1))
         reg_price = RandomForestRegressor(
             n_estimators=n_estimators, max_depth=max_depth, random_state=seed
-        ).fit(X, price)
+        ).fit(X, price.reshape(-1))
         reg_resale = RandomForestRegressor(
             n_estimators=n_estimators, max_depth=max_depth, random_state=seed
-        ).fit(np.concatenate((X, price), axis=1), resale_price)
+        ).fit(np.concatenate((X, price), axis=1), resale_price.reshape(-1))
 
     # Create the SCIP Model
     scip = Model()

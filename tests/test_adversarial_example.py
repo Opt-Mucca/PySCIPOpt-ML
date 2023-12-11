@@ -183,7 +183,7 @@ def build_and_optimise_adversarial_mnist_torch(
     )
 
     # Set an objective to maximise the difference between the correct and the wrong label
-    scip.setObjective(output_vars[wrong_label] - output_vars[right_label], sense="maximize")
+    scip.setObjective(-output_vars[wrong_label] + output_vars[right_label] + 1)
 
     # Add the ML constraint
     pred_cons = add_predictor_constr(
