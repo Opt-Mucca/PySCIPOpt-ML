@@ -66,6 +66,7 @@ def build_and_optimise_tree_planting(
     max_sterilise=10,
     costs=(25, 30, 40, 50),
     max_budget=3350,
+    build_only=False,
 ):
     assert predictor_type in ("linear", "decision_tree")
     # Read the csv data
@@ -178,7 +179,7 @@ def build_and_optimise_tree_planting(
                     tree_adjusted_survive_vars[i][j][k] <= 0,
                     tree_planting_vars[i][j][k],
                     activeone=False,
-                    name=f"tree_survive_ind_{i}_{j}_{k}_0",
+                    name=f"tree_survive_ind_{i}_{j}_{k}_1",
                 )
 
     # Randomly generate the grid characteristics
@@ -228,12 +229,14 @@ def build_and_optimise_tree_planting(
     # Add the predictors to the MIP
     pred_cons_list = []
     for i in range(len(species)):
-        pred_cons = add_predictor_constr(
-            scip,
-            regression_models[i],
-            feature_variables.reshape(-1, 7),
-            tree_survive_vars[:, :, i].reshape(-1, 1),
-            unique_naming_prefix=f"predictor_{i}_",
+        pred_cons_list.append(
+            add_predictor_constr(
+                scip,
+                regression_models[i],
+                feature_variables.reshape(-1, 7),
+                tree_survive_vars[:, :, i].reshape(-1, 1),
+                unique_naming_prefix=f"predictor_{i}_",
+            )
         )
 
     # Set the objective to maximise amount of trees that survive
@@ -248,14 +251,15 @@ def build_and_optimise_tree_planting(
         + n_grid_size**2
     )
 
-    # Optimise the model
-    scip.optimize()
+    if not build_only:
+        # Optimise the model
+        scip.optimize()
 
-    # We can check the "error" of the MIP embedding via the difference between SKLearn and SCIP output
-    for pred_cons in pred_cons_list:
-        if np.max(pred_cons.get_error()) > 10**-5:
-            error = np.max(pred_cons.get_error())
-            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -5}")
+        # We can check the "error" of the MIP embedding via the difference between SKLearn and SCIP output
+        for pred_cons in pred_cons_list:
+            if np.max(pred_cons.get_error()) > 10**-5:
+                error = np.max(pred_cons.get_error())
+                raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -5}")
 
     return scip
 

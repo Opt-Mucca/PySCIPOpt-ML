@@ -71,6 +71,7 @@ def build_and_optimise_wine_manufacturer(
     n_estimators=3,
     max_depth=3,
     epsilon=0.0001,
+    build_only=False,
 ):
     assert sklearn_xgboost_lightgbm in ("sklearn", "xgboost", "lightgbm")
     assert gbdt_or_rf in ("gbdt", "rf")
@@ -208,7 +209,7 @@ def build_and_optimise_wine_manufacturer(
 
     # Add the ML constraint. Add in a single batch!
     pred_cons = add_predictor_constr(
-        scip, reg, feature_vars, quality_vars, unique_naming_prefix="wine_", epsilon=epsilon
+        scip, reg, feature_vars, quality_vars, unique_naming_prefix="predictor_", epsilon=epsilon
     )
 
     # Add a constraint ensuring minimum wine quality on those produced
@@ -220,13 +221,14 @@ def build_and_optimise_wine_manufacturer(
         quicksum(-quality_vars[i][0] for i in range(n_wines_to_produce)) / n_wines_to_produce + 10
     )
 
-    # Optimise the SCIP model
-    scip.optimize()
+    if not build_only:
+        # Optimise the SCIP model
+        scip.optimize()
 
-    # We can check the "error" of the MIP embedding via the difference between SKLearn and SCIP output
-    if np.max(pred_cons.get_error()) > 10**-3:
-        error = np.max(pred_cons.get_error())
-        raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
+        # We can check the "error" of the MIP embedding via the difference between SKLearn and SCIP output
+        if np.max(pred_cons.get_error()) > 10**-3:
+            error = np.max(pred_cons.get_error())
+            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
 
     return scip
 

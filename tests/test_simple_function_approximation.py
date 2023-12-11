@@ -41,7 +41,12 @@ min(f(x))
 
 
 def build_and_optimise_function_approximation_model(
-    seed=42, n_inputs=5, n_samples=1000, sklearn_or_torch="sklearn", layers_sizes=(20, 20, 10)
+    seed=42,
+    n_inputs=5,
+    n_samples=1000,
+    sklearn_or_torch="sklearn",
+    layers_sizes=(20, 20, 10),
+    build_only=False,
 ):
     assert len(layers_sizes) == 3
 
@@ -130,16 +135,17 @@ def build_and_optimise_function_approximation_model(
         scip, reg_2, input_vars[1], output_vars[1], unique_naming_prefix="reg_2_"
     )
 
-    # Optimize the model
-    scip.optimize()
+    if not build_only:
+        # Optimize the model
+        scip.optimize()
 
-    # We can check the "error" of the MIP embedding via the difference between SKLearn / Torch and SCIP output
-    if np.max(mlp_cons_1.get_error()) > 10**-3:
-        error = np.max(mlp_cons_1.get_error())
-        raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
-    if np.max(mlp_cons_2.get_error()) > 10**-3:
-        error = np.max(mlp_cons_2.get_error())
-        raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
+        # We can check the "error" of the MIP embedding via the difference between SKLearn / Torch and SCIP output
+        if np.max(mlp_cons_1.get_error()) > 10**-3:
+            error = np.max(mlp_cons_1.get_error())
+            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
+        if np.max(mlp_cons_2.get_error()) > 10**-3:
+            error = np.max(mlp_cons_2.get_error())
+            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
 
     return scip
 
@@ -194,7 +200,7 @@ def build_basic_scip_model(n_inputs):
 
     # Now set additional constraints and set the objective
     scip.addCons(output_vars[1][0] == 10, name="fix_output_reg_2")
-    scip.setObjective(output_vars[0][0])
+    scip.setObjective(output_vars[0][0] + 10000)
 
     return scip, input_vars, output_vars
 

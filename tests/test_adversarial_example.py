@@ -50,7 +50,12 @@ max(y[1] - y[0])
 
 
 def build_and_optimise_adversarial_mnist_torch(
-    seed=42, n_pixel_1d=16, layer_sizes=(40, 20), image_number=10000, test=True
+    seed=42,
+    n_pixel_1d=16,
+    layer_sizes=(40, 20),
+    image_number=10000,
+    test=True,
+    build_only=False,
 ):
     assert 0 <= image_number < 30000, f"Image number {image_number} out of range"
     # Set random seed for reproducibility
@@ -190,12 +195,13 @@ def build_and_optimise_adversarial_mnist_torch(
         scip, reg, input_vars, output_vars, unique_naming_prefix="adversarial_"
     )
 
-    scip.optimize()
+    if not build_only:
+        scip.optimize()
 
-    # We can check the "error" of the MIP embedding by determining the difference between the Torch and SCIP output
-    if np.max(pred_cons.get_error()) > 10**-3:
-        error = np.max(pred_cons.get_error())
-        raise AssertionError(f"Max error {error} exceeds threshold of {10**-3}")
+        # We can check the "error" of the MIP embedding by determining the difference between the Torch and SCIP output
+        if np.max(pred_cons.get_error()) > 10**-3:
+            error = np.max(pred_cons.get_error())
+            raise AssertionError(f"Max error {error} exceeds threshold of {10**-3}")
 
     return scip
 

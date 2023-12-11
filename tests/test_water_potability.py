@@ -45,6 +45,7 @@ def build_and_optimise_water_potability(
     layers_sizes=(10, 10, 10),
     remove_feature_budgets=(2, 20, 200, 1, 20, 20, 1.5, 5, 1),
     add_feature_budgets=(2.2, 22, 220, 1.1, 22, 22, 1.7, 5.5, 1.1),
+    build_only=False,
 ):
     assert len(layers_sizes) == 3
     assert len(remove_feature_budgets) == 9
@@ -138,14 +139,15 @@ def build_and_optimise_water_potability(
     # Set the object to maximise the amount of drinkable water after treatment
     scip.setObjective(-np.sum(drinkable_water) + n_water_samples)
 
-    # Optimise the SCIP Model
-    scip.optimize()
+    if not build_only:
+        # Optimise the SCIP Model
+        scip.optimize()
 
-    # We can check the "error" of the MIP embedding via the difference between SKLearn and SCIP output
-    for pred_cons in pred_cons_list:
-        if np.max(pred_cons.get_error()) > 10**-3:
-            error = np.max(pred_cons.get_error())
-            # TODO: There is currently no way to ensure SCIP numerical tolerances dont incorrectly classify
+        # We can check the "error" of the MIP embedding via the difference between SKLearn and SCIP output
+        for pred_cons in pred_cons_list:
+            if np.max(pred_cons.get_error()) > 10**-3:
+                error = np.max(pred_cons.get_error())
+                # TODO: There is currently no way to ensure SCIP numerical tolerances dont incorrectly classify
 
     return scip
 

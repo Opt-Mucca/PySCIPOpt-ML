@@ -64,7 +64,12 @@ max(sum_i y[i])
 
 
 def build_and_optimise_city_manager(
-    seed=0, max_depth=6, n_apartments=50, grid_length=5, epsilon=0.001
+    seed=0,
+    max_depth=6,
+    n_apartments=50,
+    grid_length=5,
+    epsilon=0.001,
+    build_only=False,
 ):
     # Path to apartment price data
     data_dict = read_csv_to_dict("./tests/data/apartments.csv")
@@ -323,21 +328,22 @@ def build_and_optimise_city_manager(
                 feature_vars[i],
                 price_vars[i],
                 epsilon=epsilon,
-                unique_naming_prefix=f"p_{i}_",
+                unique_naming_prefix=f"predictor_{i}_",
             )
         )
 
     # Add the objective to the MIP
     scip.setObjective(-np.sum(price_vars) + (20 * n_apartments))
 
-    # Optimise the SCIP model
-    scip.optimize()
+    if not build_only:
+        # Optimise the SCIP model
+        scip.optimize()
 
-    # We can check the "error" of the MIP embedding by determining the difference between the SKLearn and SCIP output
-    for pred_cons in predictor_constraints:
-        if np.max(pred_cons.get_error()) > 10**-4:
-            error = np.max(pred_cons.get_error())
-            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -4}")
+        # We can check the "error" of the MIP embedding by determining the difference between the SKLearn and SCIP output
+        for pred_cons in predictor_constraints:
+            if np.max(pred_cons.get_error()) > 10**-4:
+                error = np.max(pred_cons.get_error())
+                raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -4}")
 
     return scip
 

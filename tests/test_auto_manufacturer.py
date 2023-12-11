@@ -61,6 +61,7 @@ def build_and_optimise_auto_manufacturer(
     n_estimators=6,
     min_fuel_efficiency=40,
     min_resale_ratio=0.8,
+    build_only=False,
 ):
     # Path to car data
     data_dict = read_csv_to_dict("./tests/data/Car_sales.csv")
@@ -221,13 +222,15 @@ def build_and_optimise_auto_manufacturer(
 
     scip.setObjective(-amount_sold_vars[0][0] + 10000)
 
-    scip.optimize()
+    if not build_only:
+        # Optimise the SCIP model
+        scip.optimize()
 
-    # We can check the "error" of the MIP embedding by determining the difference between the SKLearn and SCIP output
-    for predictor_constraint in pred_cons:
-        if np.max(predictor_constraint.get_error()) > 10**-4:
-            error = np.max(predictor_constraint.get_error())
-            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -4}")
+        # We can check the "error" of the MIP embedding by determining the difference between the SKLearn and SCIP output
+        for predictor_constraint in pred_cons:
+            if np.max(predictor_constraint.get_error()) > 10**-4:
+                error = np.max(predictor_constraint.get_error())
+                raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -4}")
 
     return scip
 
