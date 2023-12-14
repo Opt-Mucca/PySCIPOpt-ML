@@ -12,7 +12,7 @@ High level function and modelling objects
 Specific functions and modeling for each supported ML object:
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 3
 
   sklearn
   api/SequentialConstr
