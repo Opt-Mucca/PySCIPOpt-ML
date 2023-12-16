@@ -2,6 +2,8 @@
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/pypi/v/pyscipopt-ml)](https://pypi.org/project/pyscipopt-ml)
 
+![](docs/_static/pyscipopt-ml-figure.png)
+
 # PySCIPOpt-ML
 
 PySCIPOpt-ML is a python interface to automatically formulate Machine Learning (ML) models into Mixed-Integer Programs (MIPs).
@@ -112,4 +114,17 @@ Then, you can install `pytest` and run a few basic tests:
 ```shell
 (venv) pip install pytest
 (venv) pytest
+```
+
+## How to cite this work
+
+If this software was used for academic purposes, please cite our paper with the below information:
+
+```
+@article{turner2023pyscipopt,
+  title={PySCIPOpt-ML: Embedding Trained Machine Learning Models into Mixed-Integer Programs},
+  author={Turner, Mark and Chmiela, Antonia and Koch, Thorsten and Winkler, Michael},
+  journal={arXiv preprint arXiv:2312.08074},
+  year={2023}
+}
 ```
