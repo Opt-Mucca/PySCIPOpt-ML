@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: PySCIPOpt-ML
+url: https://github.com/Opt-Mucca/PySCIPOpt-ML
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Turner"
+    given-names: "Mark"
+    orcid: "https://orcid.org/0000-0001-7270-1496"
+  - family-names: "Chmiela"
+    given-names: "Antonia"
+    orcid: "https://orcid.org/0000-0002-4809-2958"
+  - family-names: "Koch"
+    given-names: "Thorsten"
+    orcid: "https://orcid.org/0000-0002-1967-0077"
+  - family-names: "Winkler"
+    given-names: "Michael"
+  title: "PySCIPOpt-ML: Embedding Trained Machine Learning Models into Mixed-Integer Programs"
+  doi: 10.48550/arXiv.2312.08074
+  date-released: 2023-12-13
+  url: "https://arxiv.org/abs/2312.08074"
