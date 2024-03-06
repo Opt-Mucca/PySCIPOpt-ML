@@ -50,9 +50,6 @@ It is recommended to always install packages in a virtual environment:
 ```
 This will also install the `numpy`, `pyscipopt` dependencies.
 
-Please note that `gurobipy` is commercial software and requires a license. When installed via pip or conda,
-`gurobipy` ships with a free license which is only for testing and can only solve models of limited size.
-
 ## Installation from source
 
 An alternative way to install `PySCIPOpt-ML` is from source. First this repository
