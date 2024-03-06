@@ -1,6 +1,6 @@
 [project]
 name = "PySCIPOpt-ML"
-version = "0.0.1"
+version = "0.0.2"
 description = "automatically formulate and embed ML models into MIPs with SCIP"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -12,7 +12,7 @@ authors = [
 
 dependencies = [
   "numpy",
-  "pyscipopt==4.4.0"
+  "pyscipopt==5.0.0"
 ]
 
 [project.urls]
@@ -23,6 +23,3 @@ Documentation = "https://pyscipopt-ml.readthedocs.io/en/stable/"
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[tool.cibuildwheel]
-skip="pp* cp36* cp37* cp312*"
