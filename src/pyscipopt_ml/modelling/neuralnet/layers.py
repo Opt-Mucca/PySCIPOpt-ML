@@ -81,7 +81,7 @@ class ActivationLayer(AbstractNNLayer):
             self._created_vars.append(slack)
             self._created_cons.append(affine_slack_cons)
             self._created_cons.append(sos_cons)
-        elif self.activation == "logistic":
+        elif self.activation == "logistic" or self.activation == "sigmoid":
             sigmoid_cons = add_sigmoid_activation_constraint_layer(self, activation_only=True)
             self._created_cons.append(sigmoid_cons)
         elif self.activation == "tanh":
@@ -143,7 +143,7 @@ class DenseLayer(AbstractNNLayer):
             self._created_vars.append(slack)
             self._created_cons.append(affine_slack_cons)
             self._created_cons.append(sos_cons)
-        elif self.activation == "logistic":
+        elif self.activation == "logistic" or self.activation == "sigmoid":
             sigmoid_cons = add_sigmoid_activation_constraint_layer(self, activation_only=False)
             self._created_cons.append(sigmoid_cons)
         elif self.activation == "tanh":

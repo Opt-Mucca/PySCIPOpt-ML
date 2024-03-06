@@ -5,7 +5,8 @@ The package currently supports various `Scikit-Learn
 <https://scikit-learn.org/stable/>`_ objects. It can also embed
 gradient boosting regression models from `XGBoost <https://xgboost.readthedocs.io/en/stable/>`_, and
 `LightGBM <https://lightgbm.readthedocs.io/en/stable/>`_. Finally, it supports Sequential Neural Networks from
-`PyTorch <https://pytorch.org/docs/master/>`_. In :doc:`Mixed Integer Formulations <./formulations>`, we briefly outline the
+`PyTorch <https://pytorch.org/docs/master/>`_ and `Keras <https://keras.io/api/>`_.
+In :doc:`Mixed Integer Formulations <./formulations>`, we briefly outline the
 MIP formulations used for the various ML models.
 
 
@@ -77,7 +78,6 @@ to insert it in a SCIP model.
 PyTorch
 -------
 
-
 In PyTorch, only :external+torch:py:class:`torch.nn.Sequential` objects are
 supported.
 
@@ -98,6 +98,21 @@ The result is that the class with highest value
 is assigned value 1 and all other classes are assigned value 0. Essentially, explicitly modelling
 the final activation function for classification purposes is unnecessary from a MIP perspective as
 the maximum value is preserved after the function is applied.
+
+Keras
+------
+
+For Keras, only `keras.Model <https://keras.io/api/models/model/>`_ and
+`keras.Sequential <https://keras.io/api/models/sequential/>`_ are supported.
+
+They can be embedded in a SCIP model with the function
+:py:func:`pyscipopt_ml.keras.add_keras_constr`.
+
+The supported layer types and activation functions are the same as in torch (see above).
+This support holds for the classification case when the final layer is an unsupported activation function,
+e.g. softmax. Please read the above explanation in the PyTorch section, and in such use cases set
+`output_type="classification"` when inserting the predictor constraint.
+
 
 XGBoost
 -------

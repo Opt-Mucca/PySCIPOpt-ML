@@ -11,7 +11,7 @@ PySCIPOPT-ML allows users to easily optimise MIPs with embedded ML constraints.
 
 The package currently supports various ML objects from [Scikit-Learn](https://scikit-learn.org/stable/),
 [XGBoost](https://xgboost.readthedocs.io/en/stable/), [LightGBM](https://lightgbm.readthedocs.io/en/stable/),
-and [PyTorch](https://pytorch.org/)
+[PyTorch](https://pytorch.org/), and [Keras](https://keras.io/)
 
 # Documentation
 
@@ -33,6 +33,7 @@ For reporting bugs, issues and feature requests please
 
 The current version supports the following ML packages:
 - [`torch`](https://pypi.org/project/torch/)
+- [`keras`](https://pypi.org/project/tensorflow/)
 - [`scikit-learn`](https://pypi.org/project/scikit-learn)
 - [`XGBoost`](https://pypi.org/project/xgboost/)
 - [`LightGBM`](https://pypi.org/project/lightgbm/)

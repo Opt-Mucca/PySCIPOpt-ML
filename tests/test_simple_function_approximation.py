@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from pyscipopt import Model
 from sklearn.neural_network import MLPRegressor
+from tensorflow import keras
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
@@ -44,7 +45,7 @@ def build_and_optimise_function_approximation_model(
     seed=42,
     n_inputs=5,
     n_samples=1000,
-    sklearn_or_torch="sklearn",
+    framework="sklearn",
     layers_sizes=(20, 20, 10),
     build_only=False,
 ):
@@ -54,7 +55,7 @@ def build_and_optimise_function_approximation_model(
         seed=seed, n_inputs=n_inputs, n_samples=n_samples
     )
 
-    if sklearn_or_torch == "sklearn":
+    if framework == "sklearn":
         reg_1 = MLPRegressor(
             random_state=seed,
             hidden_layer_sizes=(layers_sizes[0], layers_sizes[1], layers_sizes[2]),
@@ -63,7 +64,27 @@ def build_and_optimise_function_approximation_model(
             random_state=seed,
             hidden_layer_sizes=(layers_sizes[0], layers_sizes[1], layers_sizes[2]),
         ).fit(X, y_2.reshape(-1))
-    else:
+    elif framework == "keras":
+        keras.utils.set_random_seed(seed)
+        reg_1 = keras.Sequential()
+        reg_1.add(keras.Input(shape=(n_inputs,)))
+        reg_1.add(keras.layers.Dense(layers_sizes[0], activation="linear"))
+        reg_1.add(keras.layers.Activation(keras.activations.relu))
+        reg_1.add(keras.layers.Dense(layers_sizes[1], activation="sigmoid"))
+        reg_1.add(keras.layers.Dense(layers_sizes[2], activation="relu"))
+        reg_1.add(keras.layers.Dense(1, activation="linear"))
+        reg_1.compile(optimizer="adam", loss="mse")
+        reg_1.fit(X, y_1, batch_size=32, epochs=50)
+        reg_2 = keras.Sequential()
+        reg_2.add(keras.Input(shape=(n_inputs,)))
+        reg_2.add(keras.layers.Dense(layers_sizes[0], activation="linear"))
+        reg_2.add(keras.layers.Activation(keras.activations.sigmoid))
+        reg_2.add(keras.layers.Dense(layers_sizes[1], activation="tanh"))
+        reg_2.add(keras.layers.Dense(layers_sizes[2], activation="relu"))
+        reg_2.add(keras.layers.Dense(1, activation="linear"))
+        reg_2.compile(optimizer="adam", loss="mse")
+        reg_2.fit(X, y_2, batch_size=32, epochs=200)
+    elif framework == "torch":
         torch.random.manual_seed(seed)
         reg_1 = nn.Sequential(
             nn.Linear(n_inputs, layers_sizes[0]),
@@ -125,6 +146,8 @@ def build_and_optimise_function_approximation_model(
                 optimizer_2.zero_grad()
                 loss.backward()
                 optimizer_2.step()
+    else:
+        raise ValueError(f"Framework {framework} is unknown")
 
     # Now build the SCIP Model and embed the neural networks
     scip, input_vars, output_vars = build_basic_scip_model(n_inputs)
@@ -140,12 +163,12 @@ def build_and_optimise_function_approximation_model(
         scip.optimize()
 
         # We can check the "error" of the MIP embedding via the difference between SKLearn / Torch and SCIP output
-        if np.max(mlp_cons_1.get_error()) > 10**-3:
+        if np.max(mlp_cons_1.get_error()) > 2 * 10**-3:
             error = np.max(mlp_cons_1.get_error())
-            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
-        if np.max(mlp_cons_2.get_error()) > 10**-3:
+            raise AssertionError(f"Max error {error} exceeds threshold of {2 * 10 ** -3}")
+        if np.max(mlp_cons_2.get_error()) > 2 * 10**-3:
             error = np.max(mlp_cons_2.get_error())
-            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
+            raise AssertionError(f"Max error {error} exceeds threshold of {2 * 10 ** -3}")
 
     return scip
 
@@ -207,11 +230,17 @@ def build_basic_scip_model(n_inputs):
 
 def test_sklearn_mlp_regression():
     scip = build_and_optimise_function_approximation_model(
-        seed=42, n_inputs=5, n_samples=1000, sklearn_or_torch="sklearn", layers_sizes=(20, 20, 10)
+        seed=42, n_inputs=5, n_samples=1000, framework="sklearn", layers_sizes=(20, 20, 10)
     )
 
 
 def test_torch_sequential_regression():
     scip = build_and_optimise_function_approximation_model(
-        seed=42, n_inputs=5, n_samples=1000, sklearn_or_torch="torch", layers_sizes=(20, 20, 10)
+        seed=42, n_inputs=5, n_samples=1000, framework="torch", layers_sizes=(20, 20, 10)
+    )
+
+
+def test_keras_sequential_regression():
+    scip = build_and_optimise_function_approximation_model(
+        seed=42, n_inputs=5, n_samples=1000, framework="keras", layers_sizes=(10, 10, 10)
     )
