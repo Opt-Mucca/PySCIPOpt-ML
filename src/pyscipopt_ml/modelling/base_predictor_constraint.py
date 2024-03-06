@@ -111,6 +111,7 @@ class AbstractPredictorConstr(ABC):
         n_indicator_cons = 0
         n_sos_cons = 0
         n_linear_cons = 0
+        n_nonlinear_cons = 0
 
         created_cons = self._created_cons
         created_vars = self._created_vars
@@ -133,6 +134,8 @@ class AbstractPredictorConstr(ABC):
                         n_sos_cons += 1
                     elif cons_type == "linear":
                         n_linear_cons += 1
+                    elif cons_type == "nonlinear":
+                        n_nonlinear_cons += 1
                     else:
                         raise TypeError(
                             f"Cons {cons_set[it.multi_index]} is of unknown type {cons_type}"
@@ -157,7 +160,7 @@ class AbstractPredictorConstr(ABC):
 
         print(
             f"Constraints created:\n Linear    {n_linear_cons}\n Indicator {n_indicator_cons}\n "
-            f"SOS1      {n_sos_cons}\n"
+            f"SOS1      {n_sos_cons}\n Nonlinear {n_nonlinear_cons}\n"
             f"Created (internal) variables:\n Binary     {n_bin_vars}\n Continuous {n_cont_vars}\n"
             f"Input Shape:  {self.input.shape}\nOutput Shape: {self.output.shape}",
             file=file,

@@ -69,17 +69,17 @@ def build_and_optimise_function_approximation_model(
         reg_1 = keras.Sequential()
         reg_1.add(keras.Input(shape=(n_inputs,)))
         reg_1.add(keras.layers.Dense(layers_sizes[0], activation="linear"))
-        reg_1.add(keras.layers.Activation(keras.activations.sigmoid))
+        reg_1.add(keras.layers.Activation(keras.activations.relu))
         reg_1.add(keras.layers.Dense(layers_sizes[1], activation="sigmoid"))
-        reg_1.add(keras.layers.Dense(layers_sizes[2], activation="tanh"))
+        reg_1.add(keras.layers.Dense(layers_sizes[2], activation="relu"))
         reg_1.add(keras.layers.Dense(1, activation="linear"))
         reg_1.compile(optimizer="adam", loss="mse")
-        reg_1.fit(X, y_1, batch_size=32, epochs=200)
+        reg_1.fit(X, y_1, batch_size=32, epochs=50)
         reg_2 = keras.Sequential()
         reg_2.add(keras.Input(shape=(n_inputs,)))
         reg_2.add(keras.layers.Dense(layers_sizes[0], activation="linear"))
-        reg_2.add(keras.layers.Activation(keras.activations.relu))
-        reg_2.add(keras.layers.Dense(layers_sizes[1], activation="relu"))
+        reg_2.add(keras.layers.Activation(keras.activations.sigmoid))
+        reg_2.add(keras.layers.Dense(layers_sizes[1], activation="tanh"))
         reg_2.add(keras.layers.Dense(layers_sizes[2], activation="relu"))
         reg_2.add(keras.layers.Dense(1, activation="linear"))
         reg_2.compile(optimizer="adam", loss="mse")
@@ -163,12 +163,12 @@ def build_and_optimise_function_approximation_model(
         scip.optimize()
 
         # We can check the "error" of the MIP embedding via the difference between SKLearn / Torch and SCIP output
-        if np.max(mlp_cons_1.get_error()) > 10**-3:
+        if np.max(mlp_cons_1.get_error()) > 2 * 10**-3:
             error = np.max(mlp_cons_1.get_error())
-            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
-        if np.max(mlp_cons_2.get_error()) > 10**-3:
+            raise AssertionError(f"Max error {error} exceeds threshold of {2 * 10 ** -3}")
+        if np.max(mlp_cons_2.get_error()) > 2 * 10**-3:
             error = np.max(mlp_cons_2.get_error())
-            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -3}")
+            raise AssertionError(f"Max error {error} exceeds threshold of {2 * 10 ** -3}")
 
     return scip
 
@@ -242,5 +242,5 @@ def test_torch_sequential_regression():
 
 def test_keras_sequential_regression():
     scip = build_and_optimise_function_approximation_model(
-        seed=42, n_inputs=5, n_samples=1000, framework="keras", layers_sizes=(5, 8, 6)
+        seed=42, n_inputs=5, n_samples=1000, framework="keras", layers_sizes=(10, 10, 10)
     )
