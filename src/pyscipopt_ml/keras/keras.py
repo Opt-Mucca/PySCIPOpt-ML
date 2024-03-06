@@ -26,8 +26,7 @@ def add_keras_constr(
     scip_model : PySCIPOpt Model
         The SCIP model where the sequential model should be inserted.
 
-    keras_model : `keras.Model <https://keras.io/api/models/model/>` ||
-    `keras.Sequential <https://keras.io/api/models/sequential/>`
+    keras_model : `keras.Model <https://keras.io/api/models/model/>`
         The keras model to insert as predictor.
 
     input_vars : np.ndarray
@@ -59,9 +58,8 @@ def add_keras_constr(
 
     Warnings
     --------
-
-      Only `Dense <https://keras.io/api/layers/core_layers/dense/>`_ (with `relu / tanh / sigmoid` activation)
-      are supported.
+    Only `Dense <https://keras.io/api/layers/core_layers/dense/>`_ (with `relu / tanh / sigmoid` activation)
+    are supported.
 
     Notes
     -----
