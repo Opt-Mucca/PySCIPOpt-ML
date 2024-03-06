@@ -90,6 +90,20 @@ def lightgbm_convertors():
     return {}
 
 
+def keras_convertors():
+    """Collect known Keras objects that can be formulated and the conversion class."""
+    if "tensorflow" in sys.modules:
+        from tensorflow import keras  # pylint: disable=import-outside-toplevel
+
+        from .keras import add_keras_constr  # pylint: disable=import-outside-toplevel
+
+        return {
+            keras.Sequential: add_keras_constr,
+            keras.Model: add_keras_constr,
+        }
+    return {}
+
+
 def registered_predictors():
     """Return the list of registered predictors."""
     convertors = {
@@ -97,5 +111,6 @@ def registered_predictors():
         **pytorch_convertors(),
         **xgboost_convertors(),
         **lightgbm_convertors(),
+        **keras_convertors(),
     }
     return convertors
