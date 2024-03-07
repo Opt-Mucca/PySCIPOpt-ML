@@ -376,7 +376,6 @@ class TreeEstimator(AbstractPredictorConstr):
         classification,
         **kwargs,
     ):
-        self._default_name = "tree"
         self._tree = tree
         self._epsilon = epsilon
         self._classification = classification
@@ -385,7 +384,6 @@ class TreeEstimator(AbstractPredictorConstr):
         )
 
     def _mip_model(self, **kwargs):
-
         new_vars, new_cons = leaf_formulation(
             self.scip_model,
             self.input,

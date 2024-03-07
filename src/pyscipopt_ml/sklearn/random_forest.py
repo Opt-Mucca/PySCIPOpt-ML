@@ -41,7 +41,7 @@ def add_random_forest_regressor_constr(
 
     Returns
     -------
-    RandomForestRegressorConstr
+    RandomForestConstr
        Object containing information about what was added to scip_model to formulate
        random_forest_regressor.
 
@@ -79,7 +79,7 @@ def add_random_forest_classifier_constr(
     scip_model : PySCIPOpt Model
         The SCIP model where the predictor should be inserted.
     random_forest_classifier : :external+sklearn:py:class:`sklearn.ensemble.RandomForestClassifier`
-        The random forest regressor to insert as predictor.
+        The random forest classifier to insert as predictor.
     input_vars : list or np.ndarray
         Decision variables used as input for random forest in model.
     output_vars : list or np.ndarray, optional
@@ -90,7 +90,7 @@ def add_random_forest_classifier_constr(
 
     Returns
     -------
-    RandomForestClassifierConstr
+    RandomForestConstr
        Object containing information about what was added to scip_model to formulate
        random_forest_classifier.
 
@@ -128,7 +128,6 @@ class RandomForestConstr(SKgetter, AbstractPredictorConstr):
         **kwargs,
     ):
         self.estimators_ = []
-        self._default_name = "rand_forest_reg"
         self.classification = classification
         if self.classification:
             if predictor.n_classes_ <= 2:

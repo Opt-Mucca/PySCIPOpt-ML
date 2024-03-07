@@ -16,6 +16,8 @@ def sklearn_convertors():
             add_pls_regression_constr,
             add_random_forest_classifier_constr,
             add_random_forest_regressor_constr,
+            add_support_vector_classifier_constr,
+            add_support_vector_regressor_constr,
         )
 
         return {
@@ -34,6 +36,10 @@ def sklearn_convertors():
             "MLPClassifier": add_mlp_classifier_constr,
             "PLSRegression": add_pls_regression_constr,
             "PLSCanonical": add_pls_regression_constr,
+            "LinearSVR": add_support_vector_regressor_constr,
+            "SVR": add_support_vector_regressor_constr,
+            "LinearSVC": add_support_vector_classifier_constr,
+            "SVC": add_support_vector_classifier_constr,
         }
 
     return {}

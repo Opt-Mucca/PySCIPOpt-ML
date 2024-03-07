@@ -103,7 +103,6 @@ class LogisticRegressionConstr(BaseSKlearnRegressionConstr):
         if output_type not in ("classification", "regression"):
             raise ParameterError("output_type should be either 'classification' or 'regression'")
 
-        self._default_name = "log_reg"
         self.output_type = output_type
         self.output_size = 1 if predictor.classes_.size <= 2 else predictor.classes_.size
 

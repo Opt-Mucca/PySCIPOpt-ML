@@ -141,7 +141,6 @@ class DecisionTreeConstr(SKgetter, AbstractPredictorConstr):
         **kwargs,
     ):
         self.epsilon = epsilon
-        self._default_name = "tree_reg"
         self.classification = classification
         if self.classification:
             if predictor.n_classes_ <= 2:
