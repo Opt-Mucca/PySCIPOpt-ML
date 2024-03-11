@@ -158,8 +158,8 @@ def create_aggregation_constraints(
         created_cons.append(sum_tree_cons)
     else:
         new_vars, new_cons = argmax_bound_formulation(
-            scip_model, aggregate_tree_output, output, unique_naming_prefix
-        )
+            scip_model, aggregate_tree_output, output, unique_naming_prefix, one_dim_center=0
+        )  # TODO: Determine for which models is one_dim_center=0.5
         for added_var in new_vars:
             created_vars.append(added_var)
         for added_cons in new_cons:

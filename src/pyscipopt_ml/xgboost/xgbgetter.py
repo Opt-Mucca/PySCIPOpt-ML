@@ -131,7 +131,10 @@ class XGBgetter(AbstractPredictorConstr):
                 xgb_class_prediction = self.predictor.predict(self.input_values)
                 xgb_output_values = np.zeros((self.input.shape[0], self.output.shape[-1]))
                 for i, class_pred in enumerate(xgb_class_prediction):
-                    xgb_output_values[i][class_pred] = 1
+                    if self.output.shape[-1] == 1:
+                        xgb_output_values[i][0] = class_pred
+                    else:
+                        xgb_output_values[i][class_pred] = 1
             scip_output_values = self.output_values
             error = np.abs(xgb_output_values - scip_output_values)
             max_error = np.max(error)
