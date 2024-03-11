@@ -22,7 +22,7 @@ from sklearn.linear_model import (
     Ridge,
 )
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-from sklearn.svm import SVC, SVR, LinearSVC, LinearSVR
+from sklearn.svm import LinearSVC, LinearSVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from src.pyscipopt_ml import add_predictor_constr

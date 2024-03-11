@@ -210,7 +210,7 @@ class SupportVectorConstr(SKgetter, AbstractPredictorConstr):
                 ]
                 regression_cons[i] = self.scip_model.addCons(
                     sum(
-                        dual_coefs[0][s] * gamma * dot_products[s] ** degree
+                        dual_coefs[0][s] * (gamma**degree) * dot_products[s] ** degree
                         for s in range(n_support)
                     )
                     + intercept
