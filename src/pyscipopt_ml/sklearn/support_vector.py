@@ -6,6 +6,7 @@
 
 
 import numpy as np
+from sklearn.svm import LinearSVC, LinearSVR
 
 from ..exceptions import NoModel
 from ..modelling import AbstractPredictorConstr
@@ -139,10 +140,14 @@ class SupportVectorConstr(SKgetter, AbstractPredictorConstr):
                 raise NoModel(predictor, "Multi-classification is not supported for SVC")
         else:
             self.output_size = 1
-        if predictor.class_weight is not None:
-            raise NoModel(predictor, "Non uniform class weights are not supported.")
-        if predictor.kernel not in ["linear", "poly"]:
-            raise NoModel(predictor, f"Kernel type {predictor.kernel} not linear nor poly")
+        if isinstance(predictor, LinearSVR) or isinstance(predictor, LinearSVC):
+            self.kernel = "linear"
+        else:
+            self.kernel = predictor.kernel
+            if self.kernel not in ["linear", "poly"]:
+                raise NoModel(predictor, f"Kernel type {self.kernel} not linear nor poly")
+            if predictor.class_weight is not None:
+                raise NoModel(predictor, "Non uniform class weights are not supported.")
         SKgetter.__init__(self, predictor, input_vars)
         AbstractPredictorConstr.__init__(
             self, scip_model, input_vars, output_vars, unique_naming_prefix, **kwargs
@@ -159,18 +164,21 @@ class SupportVectorConstr(SKgetter, AbstractPredictorConstr):
 
         # Extract data from the predictor object
         intercept = self.predictor.intercept_[0]
-        kernel = self.predictor.kernel
-        if kernel == "linear":
-            coefs = self.predictor.coef_[0]
+        if self.kernel == "linear":
+            # LinearSVM has a different dimension output to SVM
+            if self.predictor.coef_.ndim > 1:
+                coefs = self.predictor.coef_[0]
+            else:
+                coefs = self.predictor.coef_
         else:
             degree = self.predictor.degree
+            n_support = np.sum(self.predictor.n_support_)
             dual_coefs = self.predictor.dual_coef_
             support_vectors = self.predictor.support_vectors_
             gamma = self.predictor._gamma  # TODO: Is this possible to access otherwise?
 
-        # Create additional variables and define n_support for classification
+        # Create additional variables for classification
         if self.classification:
-            n_support = np.sum(self.predictor.n_support_)
             regression_vars = create_vars(
                 self.scip_model,
                 shape=(n_samples, 1),
@@ -179,8 +187,6 @@ class SupportVectorConstr(SKgetter, AbstractPredictorConstr):
                 ub=None,
                 name_prefix=self.unique_naming_prefix + "reg_",
             )
-        else:
-            n_support = self.predictor.n_support_[0]
 
         # Create the regression constraints for the SVR / SVC
         regression_cons = np.zeros((n_samples,), dtype=object)
@@ -189,7 +195,7 @@ class SupportVectorConstr(SKgetter, AbstractPredictorConstr):
                 out_var = self.output[i][0]
             else:
                 out_var = regression_vars[i][0]
-            if kernel == "linear":
+            if self.kernel == "linear":
                 name = self.unique_naming_prefix + f"reg_sv_lin_"
                 regression_cons[i] = self.scip_model.addCons(
                     sum(self.input[i][j] * coefs[j] for j in range(n_features)) + intercept
