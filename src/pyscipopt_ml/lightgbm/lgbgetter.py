@@ -173,7 +173,10 @@ class LGBgetter(AbstractPredictorConstr):
                 lgb_class_prediction = self.predictor.predict(self.input_values)
                 lgb_output_values = np.zeros((self.input.shape[0], self.output.shape[-1]))
                 for i, class_pred in enumerate(lgb_class_prediction):
-                    lgb_output_values[i][class_pred] = 1
+                    if self.output.shape[-1] == 1:
+                        lgb_output_values[i][0] = class_pred
+                    else:
+                        lgb_output_values[i][class_pred] = 1
             scip_output_values = self.output_values
             error = np.abs(lgb_output_values - scip_output_values)
             max_error = np.max(error)

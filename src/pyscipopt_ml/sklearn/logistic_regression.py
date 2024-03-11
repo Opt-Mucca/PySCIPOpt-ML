@@ -103,7 +103,6 @@ class LogisticRegressionConstr(BaseSKlearnRegressionConstr):
         if output_type not in ("classification", "regression"):
             raise ParameterError("output_type should be either 'classification' or 'regression'")
 
-        self._default_name = "log_reg"
         self.output_type = output_type
         self.output_size = 1 if predictor.classes_.size <= 2 else predictor.classes_.size
 
@@ -144,42 +143,20 @@ class LogisticRegressionConstr(BaseSKlearnRegressionConstr):
 
         # In the case of classification, we need to return binary results.
         if self.output_type == "classification":
-            if outdim == 1:
-                # In the case of there being only one class, we can simply check the affine transformation around 0
-                name_prefix = self.unique_naming_prefix + "bin_var"
-                bin_vars = create_vars(
-                    self.scip_model, shape=(n_samples,), vtype="B", name_prefix=name_prefix
-                )
-                output_eq_cons = np.zeros((n_samples,), dtype=object)
-                bin_lb_cons = np.zeros((n_samples,), dtype=object)
-                bin_ub_cons = np.zeros((n_samples,), dtype=object)
-                for i in range(n_samples):
-                    name = self.unique_naming_prefix + f"bin_lb_{i}"
-                    bin_lb_cons[i] = self.scip_model.addCons(
-                        bin_vars[i] <= 1 + affine_vars[i][0], name=name
-                    )
-                    name = self.unique_naming_prefix + f"bin_ub_{i}"
-                    bin_ub_cons[i] = self.scip_model.addCons(
-                        bin_vars[i] >= affine_vars[i][0], name=name
-                    )
-                    name = self.unique_naming_prefix + f"bin_output_{i}"
-                    output_eq_cons[i] = self.scip_model.addCons(
-                        bin_vars[i] == self.output[i][0], name=name
-                    )
-                self._created_vars.append(bin_vars)
-                for cons in [output_eq_cons, bin_lb_cons, bin_ub_cons]:
-                    self._created_cons.append(cons)
-            else:
-                # Use an argmax formulation on the output of the affine transformation
-                added_vars, added_cons = argmax_bound_formulation(
-                    self.scip_model, affine_vars, self.output, self.unique_naming_prefix
-                )
+            # Use an argmax formulation on the output of the affine transformation
+            added_vars, added_cons = argmax_bound_formulation(
+                self.scip_model,
+                affine_vars,
+                self.output,
+                self.unique_naming_prefix,
+                one_dim_center=0,
+            )
 
-                # Store all the appropriate variables
-                for added_var in added_vars:
-                    self._created_vars.append(added_var)
-                for added_con in added_cons:
-                    self._created_cons.append(added_con)
+            # Store all the appropriate variables
+            for added_var in added_vars:
+                self._created_vars.append(added_var)
+            for added_con in added_cons:
+                self._created_cons.append(added_con)
         else:
             # In this case we are turning probabilities and need to model the logistic function explicitly
             if outdim == 1:

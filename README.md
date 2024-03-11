@@ -70,12 +70,13 @@ After cloning the repository entering the directory where it was cloned, one can
 # Development
 This project is completely open to any contributions. Feel free to implement your own functionalities.
 
-Before committing anything, please install pytest, pre-commit, and all MLframeworks:
+Before committing anything, please install pytest, pre-commit, and all ML frameworks:
 
 ```shell
 pip install pytest
 pip install scikit-learn
 pip install torch
+pip install tensorflow
 pip install xgboost
 pip install lightgbm
 pip install pre-commit

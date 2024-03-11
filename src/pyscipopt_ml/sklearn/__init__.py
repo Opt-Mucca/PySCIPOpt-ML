@@ -14,3 +14,7 @@ from .random_forest import (
     add_random_forest_classifier_constr,
     add_random_forest_regressor_constr,
 )
+from .support_vector import (
+    add_support_vector_classifier_constr,
+    add_support_vector_regressor_constr,
+)

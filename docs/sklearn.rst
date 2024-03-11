@@ -12,6 +12,7 @@ Functions and modeling object for Scikit-learn models
   api/DecisionTreeConstr
   api/GradientBoostingConstr
   api/RandomForestConstr
+  api/SupportVectorConstr
   api/MLPConstr
 
 Utility

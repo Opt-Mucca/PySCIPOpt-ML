@@ -22,7 +22,7 @@ to insert it in a SCIP model.
 
    * - Machine Learning Model
      - Scikit-learn object
-     - Function to insert
+     - Functions to insert
    * - Ordinary Least Square
      - :external:py:class:`LinearRegression
        <sklearn.linear_model.LinearRegression>`
@@ -51,29 +51,50 @@ to insert it in a SCIP model.
        <sklearn.neural_network.MLPRegressor>`
        :external:py:class:`MLPClassifier
        <sklearn.neural_network.MLPClassifier>`
-     - :py:mod:`add_mlp_constr
+     - :py:mod:`add_mlp_regressor_constr
+       <pyscipopt_ml.sklearn.mlp>`
+       :py:mod:`add_mlp_classifier_constr
        <pyscipopt_ml.sklearn.mlp>`
    * - Decision tree
      - :external:py:class:`DecisionTreeRegressor
        <sklearn.tree.DecisionTreeRegressor>`
        :external:py:class:`DecisionTreeClassifier
        <sklearn.tree.DecisionTreeClassifier>`
-     - :py:mod:`add_decision_tree_constr
+     - :py:mod:`add_decision_tree_regressor_constr
+       <pyscipopt_ml.sklearn.decision_tree>`
+       :py:mod:`add_decision_tree_classifier_constr
        <pyscipopt_ml.sklearn.decision_tree>`
    * - Gradient boosting
      - :external:py:class:`GradientBoostingRegressor
        <sklearn.ensemble.GradientBoostingRegressor>`
        :external:py:class:`GradientBoostingClassifier
        <sklearn.ensemble.GradientBoostingClassifier>`
-     - :py:mod:`add_gradient_boosting_constr
+     - :py:mod:`add_gradient_boosting_regressor_constr
+       <pyscipopt_ml.sklearn.gradient_boosting>`
+       :py:mod:`add_gradient_boosting_classifier_constr
        <pyscipopt_ml.sklearn.gradient_boosting>`
    * - Random Forest
      - :external:py:class:`RandomForestRegressor
        <sklearn.ensemble.RandomForestRegressor>`
        :external:py:class:`RandomForestClassifier
        <sklearn.ensemble.RandomForestClassifier>`
-     - :py:mod:`add_random_forest_constr
+     - :py:mod:`add_random_forest_regressor_constr
        <pyscipopt_ml.sklearn.random_forest>`
+       :py:mod:`add_random_forest_classifier_constr
+       <pyscipopt_ml.sklearn.random_forest>`
+   * - Support Vector Machines
+     - :external:py:class:`SVR
+       <sklearn.svm.SVR>`
+       :external:py:class:`SVC
+       <sklearn.svm.SVC>`
+       :external:py:class:`LinearSVR
+       <sklearn.svm.LinearSVR>`
+       :external:py:class:`LinearSVC
+       <sklearn.svm.LinearSVC>`
+     - :py:mod:`add_support_vector_regressor_constr
+       <pyscipopt_ml.svm.support_vector>`
+       :py:mod:`add_support_vector_classifier_constr
+       <pyscipopt_ml.svm.support_vector>`
 
 PyTorch
 -------

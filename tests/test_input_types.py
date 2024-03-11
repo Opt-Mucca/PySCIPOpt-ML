@@ -22,6 +22,7 @@ from sklearn.linear_model import (
     Ridge,
 )
 from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.svm import LinearSVC, LinearSVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from src.pyscipopt_ml import add_predictor_constr
@@ -128,6 +129,8 @@ testdata = [
     (MLPRegressor, False, False, 2, "list", "None"),
     (MLPClassifier, True, True, 1, "numpy", "numpy"),
     (MLPClassifier, False, True, 2, "list", "None"),
+    (LinearSVR, False, False, 2, "list", "None"),
+    (LinearSVC, False, True, 1, "numpy", "numpy"),
 ]
 
 
