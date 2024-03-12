@@ -1,7 +1,7 @@
 """Implements some utility tools for all scikit-learn objects."""
 
 import numpy as np
-from sklearn.base import is_classifier
+from sklearn.base import ClusterMixin, is_classifier
 from sklearn.utils.validation import check_is_fitted
 
 from ..exceptions import NoSolution
@@ -53,7 +53,7 @@ class SKgetter(AbstractPredictorConstr):
         """
 
         if self._has_solution:
-            if not is_classifier(self.predictor):
+            if not is_classifier(self.predictor) and not isinstance(self.predictor, ClusterMixin):
                 sk_output_values = self.predictor.predict(self.input_values).reshape(
                     self.input.shape[0], self.output.shape[-1]
                 )

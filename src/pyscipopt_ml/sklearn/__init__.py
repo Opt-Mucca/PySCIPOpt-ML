@@ -1,3 +1,4 @@
+from .centroid_cluster import add_centroid_cluster_constr
 from .decision_tree import (
     add_decision_tree_classifier_constr,
     add_decision_tree_regressor_constr,
