@@ -42,6 +42,7 @@ def sklearn_convertors():
             "LinearSVC": add_support_vector_classifier_constr,
             "SVC": add_support_vector_classifier_constr,
             "KMeans": add_centroid_cluster_constr,
+            "MiniBatchKMeans": add_centroid_cluster_constr,
         }
 
     return {}

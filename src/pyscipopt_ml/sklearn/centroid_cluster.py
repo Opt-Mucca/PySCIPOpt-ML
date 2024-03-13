@@ -17,6 +17,7 @@ def add_centroid_cluster_constr(
     input_vars,
     output_vars=None,
     unique_naming_prefix="",
+    formulation="l2",
     **kwargs,
 ):
     """Formulate centroid_clusteror in scip_model.
@@ -37,6 +38,10 @@ def add_centroid_cluster_constr(
     unique_naming_prefix : str, optional
         A unique naming prefix that is used before all variable and constraint names. This parameter is important if
         the SCIP model is later printed to file and many predictors are added to the same SCIP model.
+    formulation : str, optional
+        The formulation type used when embedding the centroid clustering predictor.
+        Valid types are "l2" (standard norm, same as the predictor), and "l1" for a linearised version.
+        Warning: The linearised version will incorrectly label some points.
 
     Returns
     -------
@@ -55,6 +60,7 @@ def add_centroid_cluster_constr(
         input_vars,
         output_vars,
         unique_naming_prefix,
+        formulation,
         **kwargs,
     )
 
@@ -73,15 +79,22 @@ class CentroidClusterConstr(SKgetter, AbstractPredictorConstr):
         input_vars,
         output_vars,
         unique_naming_prefix,
-        formulation="l1",
+        formulation,
         **kwargs,
     ):
-        if predictor.n_clusters <= 1:
+        if hasattr(predictor, "n_clusters"):
+            n_clusters = predictor.n_clusters
+        else:
+            n_clusters = predictor.cluster_centers_.shape[0]
+        if n_clusters <= 1:
             raise NoModel(predictor, "Single cluster model is redundant")
-        if predictor.n_clusters == 2:
+        if n_clusters == 2:
             self.output_size = 1
         else:
-            self.output_size = predictor.n_clusters
+            self.output_size = n_clusters
+        if formulation not in ["l1", "l2"]:
+            raise NoModel(predictor, f"Formulation {formulation} is invalid")
+        self.formulation = formulation
         SKgetter.__init__(self, predictor, input_vars)
         AbstractPredictorConstr.__init__(
             self, scip_model, input_vars, output_vars, unique_naming_prefix, **kwargs
@@ -95,7 +108,10 @@ class CentroidClusterConstr(SKgetter, AbstractPredictorConstr):
 
         n_samples = self.input.shape[0]
         n_features = self.input.shape[-1]
-        n_clusters = self.predictor.n_clusters
+        if hasattr(self.predictor, "n_clusters"):
+            n_clusters = self.predictor.n_clusters
+        else:
+            n_clusters = self.predictor.cluster_centers_.shape[0]
 
         # Create additional variables for distance to eac cluster
         dist_vars = create_vars(
@@ -109,12 +125,49 @@ class CentroidClusterConstr(SKgetter, AbstractPredictorConstr):
 
         # Create constraints that measure distance from each sample to each centroid
         dist_cons = np.zeros((n_samples, n_clusters), dtype=object)
+        if self.formulation == "l1":
+            l1_dist_vars = create_vars(
+                self.scip_model,
+                shape=(n_samples, n_clusters, n_features, 2),
+                vtype="C",
+                lb=0,
+                name_prefix=self.unique_naming_prefix + "l1_dist_",
+            )
+            l1_dist_cons = np.zeros((n_samples, n_clusters, n_features), dtype=object)
+            l1_sos_cons = np.zeros((n_samples, n_clusters, n_features), dtype=object)
         for j in range(n_clusters):
             centroid = self.predictor.cluster_centers_[j]
             for i in range(n_samples):
-                sum_dist = sum((self.input[i][k] - centroid[k]) ** 2 for k in range(n_features))
+                if self.formulation == "l1":
+                    for k in range(n_features):
+                        name = self.unique_naming_prefix + f"l1_dist_{i}_{j}_{k}"
+                        l1_dist_cons[i][j][k] = self.scip_model.addCons(
+                            self.input[i][k] - centroid[k]
+                            == l1_dist_vars[i][j][k][0] - l1_dist_vars[i][j][k][1],
+                            name=name,
+                        )
+                        name = self.unique_naming_prefix + f"l1_sos_{i}_{j}_{k}"
+                        l1_sos_cons[i][j][k] = self.scip_model.addConsSOS1(
+                            [l1_dist_vars[i][j][k][0], l1_dist_vars[i][j][k][1]], name=name
+                        )
+                    sum_dist = sum(
+                        l1_dist_vars[i][j][k][0] + l1_dist_vars[i][j][k][1]
+                        for k in range(n_features)
+                    )
+                else:
+                    sum_dist = sum(
+                        (self.input[i][k] - centroid[k]) ** 2 for k in range(n_features)
+                    )
                 name = self.unique_naming_prefix + f"dist_cons_{i}_{j}"
                 dist_cons[i][j] = self.scip_model.addCons(dist_vars[i][j] == sum_dist, name=name)
+
+        # Add created variables and constraints
+        if self.formulation == "l1":
+            self._created_vars.append(l1_dist_vars)
+            self._created_cons.append(l1_dist_cons)
+            self._created_cons.append(l1_sos_cons)
+        self._created_vars.append(dist_vars)
+        self._created_cons.append(dist_cons)
 
         # Add argmax constraint for closest centroid (turn variables to negative for argmin)
         if n_clusters == 2:
@@ -139,10 +192,7 @@ class CentroidClusterConstr(SKgetter, AbstractPredictorConstr):
             argmax_vars, argmax_cons = argmax_bound_formulation(
                 self.scip_model, -dist_vars, self.output, self.unique_naming_prefix
             )
-
         for new_vars in argmax_vars:
             self._created_vars.append(new_vars)
         for new_cons in argmax_cons:
             self._created_cons.append(new_cons)
-        self._created_vars.append(dist_vars)
-        self._created_cons.append(dist_cons)
