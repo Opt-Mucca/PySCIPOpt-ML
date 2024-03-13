@@ -92,9 +92,16 @@ to insert it in a SCIP model.
        :external:py:class:`LinearSVC
        <sklearn.svm.LinearSVC>`
      - :py:mod:`add_support_vector_regressor_constr
-       <pyscipopt_ml.svm.support_vector>`
+       <pyscipopt_ml.sklearn.support_vector>`
        :py:mod:`add_support_vector_classifier_constr
-       <pyscipopt_ml.svm.support_vector>`
+       <pyscipopt_ml.sklearn.support_vector>`
+   * - Centroid Clustering
+     - :external:py:class:`KMeans
+       <sklearn.cluster.KMeans>`
+       :external:py:class:`MiniBatchKMeans
+       <sklearn.cluster.MiniBatchKMeans>`
+     - :py:mod:`add_centroid_cluster_constr
+       <pyscipopt_ml.sklearn.centroid_cluster>`
 
 PyTorch
 -------

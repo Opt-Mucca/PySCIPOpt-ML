@@ -2,6 +2,8 @@ import numpy as np
 import pytest
 from lightgbm import LGBMClassifier, LGBMRegressor
 from pyscipopt import Model
+from sklearn.base import ClusterMixin
+from sklearn.cluster import KMeans, MiniBatchKMeans
 from sklearn.cross_decomposition import PLSCanonical, PLSRegression
 from sklearn.datasets import (
     load_breast_cancer,
@@ -75,7 +77,10 @@ def train_embed_and_optimise(predictor, multi_dimension, classification, n_sampl
         if classification and multi_dimension:
             predictor.add(keras.layers.Activation(keras.activations.softmax))
         predictor.compile(optimizer="adam", loss="mse")
-    predictor.fit(X, y)
+    if not isinstance(predictor, ClusterMixin):
+        predictor.fit(X, y)
+    else:
+        predictor.fit(X)
 
     # Create the SCIP model
     scip = Model()
@@ -149,6 +154,9 @@ testdata = [
     (LGBMClassifier(max_depth=4, n_estimators=4), False, True),
     (keras.Model(), True, False),
     (keras.Model(), True, True),
+    (KMeans(n_clusters=3), True, True),
+    (KMeans(n_clusters=2), False, True),
+    (MiniBatchKMeans(n_clusters=3), True, True),
 ]
 
 

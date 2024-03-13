@@ -9,6 +9,7 @@ Functions and modeling object for Scikit-learn models
   api/LinearRegressionConstr
   api/PLSRegressionConstr
   api/LogisticRegressionConstr
+  api/CentroidClusterConstr
   api/DecisionTreeConstr
   api/GradientBoostingConstr
   api/RandomForestConstr

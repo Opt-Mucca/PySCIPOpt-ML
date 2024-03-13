@@ -5,6 +5,7 @@ def sklearn_convertors():
     """Collect convertors for Scikit-learn objects."""
     if "sklearn" in sys.modules:
         from .sklearn import (
+            add_centroid_cluster_constr,
             add_decision_tree_classifier_constr,
             add_decision_tree_regressor_constr,
             add_gradient_boosting_classifier_constr,
@@ -40,6 +41,8 @@ def sklearn_convertors():
             "SVR": add_support_vector_regressor_constr,
             "LinearSVC": add_support_vector_classifier_constr,
             "SVC": add_support_vector_classifier_constr,
+            "KMeans": add_centroid_cluster_constr,
+            "MiniBatchKMeans": add_centroid_cluster_constr,
         }
 
     return {}
