@@ -1,6 +1,6 @@
 [project]
 name = "PySCIPOpt-ML"
-version = "0.1.0"
+version = "0.2.0"
 description = "automatically formulate and embed ML models into MIPs with SCIP"
 readme = "README.md"
 requires-python = ">=3.8"
