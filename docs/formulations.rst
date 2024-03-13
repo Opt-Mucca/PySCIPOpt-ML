@@ -273,3 +273,64 @@ the choice of :math:`\epsilon` apply to this case.
 
 In the case of classification, after the linear combination (aggregation) is performed,
 the output is piped through the argmax formulation.
+
+Support Vector Machines
+=============================
+
+For support vector machines, currently only linear and polynomial kernels are supported.
+In addition, currently only binary classification is supported, as modelling the sklearn
+one-vs-all relation is non-trivial.
+
+The formulation for a linear kernel is simply a linear regression model. That is:
+
+.. math::
+
+  y = \sum_{i=1}^n \beta_i x_i + \beta_0.
+
+The formulation for a polynomial kernel requires introducing some additional notation.
+Let :math:`S` be the set of support vectors, :math:`d` be the degree of the polynomial kernel,
+:math:`\Lambda \in \mathbb{R}^{S}` be the dual coefficients,
+and :math:`v \in \mathbb{R}^{n \times S}` be the support vectors. Then the result of the regression
+function is:
+
+.. math::
+
+  y = \sum_{s=1}^{|S|} \Lambda_{s} \gamma^{d} (\sum_{i=1}^n x_i v_{i,s})^{d}
+
+As :math:`|S|` is not known until after training, it is possible that the embedded models
+for polynomial kernels can be much larger than the feature sizes would suggest. Hence, the
+MIP model may become quite large and difficult to optimise.
+
+In the case of classification, the output of the regression function is piped
+into the argmax formulation centred around 0.
+
+
+Centroid Clustering
+======================
+
+The formulation for centroid clustering is as follows, where :math:`d_k` are the distance variables
+between the input vector and cluster :math:`k` and
+:math:`C \in \mathbb{R}^{n \times K}` are the cluster centers:
+
+.. math::
+
+  d_k = \sum_{i=1}^n (x_i - C_{i,k})^{2} \quad \forall k \in K
+
+  y = argmin(d)
+
+The argmin function in practice is accomplished by using argmax on the negative variables.
+
+The above formulation is non-linear. A linearised version that uses the L1 norm instead of the L2 norm
+is also provided, although it should be noted that points can be misclassified
+when using this formulation as it is an approximation. Let :math:`pos_{i,k} \geq 0` and
+:math:`neg_{i,k} \geq 0` be variables whose sum is the L1 distance in a dimension to a given centroid.
+
+.. math::
+
+  pos_{i,k} - neg_{i,k} = x_i - C_{i,k} \quad \forall i,k \in [n] \times K
+
+  SOS1(pos_{i,k}, neg_{i,k}) \quad \forall i,k, \in [n] \times K
+
+  d_k = \sum_{i=1}^n (pos_{i,k} + neg_{i,k}) \quad \forall k \in K
+
+  y = argmin(d)
