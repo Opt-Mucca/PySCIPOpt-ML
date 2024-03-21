@@ -148,7 +148,7 @@ class SupportVectorConstr(SKgetter, AbstractPredictorConstr):
                 raise NoModel(predictor, f"Kernel type {self.kernel} not linear nor poly")
             if predictor.class_weight is not None:
                 raise NoModel(predictor, "Non uniform class weights are not supported.")
-        SKgetter.__init__(self, predictor, input_vars)
+        SKgetter.__init__(self, predictor, **kwargs)
         AbstractPredictorConstr.__init__(
             self, scip_model, input_vars, output_vars, unique_naming_prefix, **kwargs
         )

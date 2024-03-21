@@ -64,7 +64,7 @@ class PLSRegressionConstr(SKgetter, AbstractPredictorConstr):
         **kwargs,
     ):
         self.output_size = predictor.n_components
-        SKgetter.__init__(self, predictor, input_vars, **kwargs)
+        SKgetter.__init__(self, predictor, **kwargs)
         AbstractPredictorConstr.__init__(
             self,
             scip_model,

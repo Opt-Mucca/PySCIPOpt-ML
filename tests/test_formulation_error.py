@@ -25,6 +25,13 @@ from sklearn.linear_model import (
     Ridge,
 )
 from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import (
+    Binarizer,
+    Normalizer,
+    PolynomialFeatures,
+    StandardScaler,
+)
 from sklearn.svm import SVC, SVR, LinearSVC, LinearSVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from tensorflow import keras
@@ -118,14 +125,15 @@ def train_embed_and_optimise(predictor, multi_dimension, classification, n_sampl
 
 
 testdata = [
+    (Pipeline([("scaler", StandardScaler()), ("linreg", LinearRegression())]), True, False),
     (LinearRegression(), True, False),
     (ElasticNet(), False, False),
     (Lasso(), True, False),
     (Ridge(), False, False),
     (PLSCanonical(n_components=4), True, False),
     (PLSRegression(n_components=1), False, False),
-    (LogisticRegression(), False, True),
-    (LogisticRegression(), True, True),
+    (Pipeline([("s", StandardScaler()), ("l", LogisticRegression())]), False, True),
+    (Pipeline([("s", StandardScaler()), ("l", LogisticRegression())]), True, True),
     (DecisionTreeRegressor(max_depth=4), True, False),
     (DecisionTreeRegressor(max_depth=4), False, False),
     (DecisionTreeClassifier(max_depth=4), True, True),
@@ -135,16 +143,16 @@ testdata = [
     (RandomForestRegressor(max_depth=4, n_estimators=4), True, False),
     (RandomForestClassifier(max_depth=4, n_estimators=4), True, True),
     (RandomForestClassifier(max_depth=4, n_estimators=4), False, True),
-    (MLPRegressor(hidden_layer_sizes=(10, 10, 10), activation="relu"), False, False),
-    (MLPRegressor(hidden_layer_sizes=(10, 10, 10), activation="logistic"), True, False),
-    (MLPRegressor(hidden_layer_sizes=(10, 10, 10), activation="tanh"), True, False),
-    (MLPClassifier(hidden_layer_sizes=(10, 10, 10), activation="relu"), False, True),
-    (MLPClassifier(hidden_layer_sizes=(10, 10, 10), activation="relu"), True, True),
-    (MLPClassifier(hidden_layer_sizes=(10, 10, 10), activation="logistic"), True, True),
-    (LinearSVR(), False, False),
+    (MLPRegressor((10, 10, 10), "relu"), False, False),
+    (MLPRegressor((10, 10, 10), "logistic"), True, False),
+    (MLPRegressor((10, 10, 10), "tanh"), True, False),
+    (MLPClassifier((10, 10, 10), "relu"), False, True),
+    (MLPClassifier((10, 10, 10), "relu"), True, True),
+    (MLPClassifier((10, 10, 10), "logistic"), True, True),
+    (LinearSVR(dual="auto"), False, False),
     (SVR(kernel="poly"), False, False),
     (SVR(kernel="linear"), False, False),
-    (LinearSVC(), False, True),
+    (LinearSVC(dual="auto", max_iter=5000), False, True),
     (SVC(kernel="poly", degree=2), False, True),
     (XGBRegressor(max_depth=4, n_estimators=4), True, False),
     (XGBRegressor(max_depth=4, n_estimators=4), False, False),
@@ -154,9 +162,13 @@ testdata = [
     (LGBMClassifier(max_depth=4, n_estimators=4), False, True),
     (keras.Model(), True, False),
     (keras.Model(), True, True),
-    (KMeans(n_clusters=3), True, True),
-    (KMeans(n_clusters=2), False, True),
-    (MiniBatchKMeans(n_clusters=3), True, True),
+    (KMeans(n_clusters=3, n_init="auto"), True, True),
+    (KMeans(n_clusters=2, n_init="auto"), False, True),
+    (MiniBatchKMeans(n_clusters=3, n_init="auto"), True, True),
+    (Pipeline([("s", PolynomialFeatures(degree=3)), ("l", LinearRegression())]), True, False),
+    (Pipeline([("n", Normalizer(norm="l1")), ("l", LinearRegression())]), True, False),
+    (Pipeline([("n", Normalizer(norm="l2")), ("l", LinearRegression())]), True, False),
+    (Pipeline([("n", Normalizer(norm="max")), ("l", LinearRegression())]), True, False),
 ]
 
 

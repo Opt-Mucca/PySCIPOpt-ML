@@ -27,7 +27,7 @@ class BaseSKlearnRegressionConstr(SKgetter, AbstractPredictorConstr):
         unique_naming_prefix="",
         **kwargs,
     ):
-        SKgetter.__init__(self, predictor, input_vars, **kwargs)
+        SKgetter.__init__(self, predictor, **kwargs)
         AbstractPredictorConstr.__init__(
             self,
             scip_model,

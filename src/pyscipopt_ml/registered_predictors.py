@@ -14,6 +14,7 @@ def sklearn_convertors():
             add_logistic_regression_constr,
             add_mlp_classifier_constr,
             add_mlp_regressor_constr,
+            add_pipeline_constr,
             add_pls_regression_constr,
             add_random_forest_classifier_constr,
             add_random_forest_regressor_constr,
@@ -43,6 +44,7 @@ def sklearn_convertors():
             "SVC": add_support_vector_classifier_constr,
             "KMeans": add_centroid_cluster_constr,
             "MiniBatchKMeans": add_centroid_cluster_constr,
+            "Pipeline": add_pipeline_constr,
         }
 
     return {}
