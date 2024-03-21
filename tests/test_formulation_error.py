@@ -134,6 +134,7 @@ testdata = [
     (PLSRegression(n_components=1), False, False),
     (Pipeline([("s", StandardScaler()), ("l", LogisticRegression())]), False, True),
     (Pipeline([("s", StandardScaler()), ("l", LogisticRegression())]), True, True),
+    (Pipeline([("b", Binarizer()), ("d", DecisionTreeRegressor(max_depth=4))]), False, False),
     (DecisionTreeRegressor(max_depth=4), True, False),
     (DecisionTreeRegressor(max_depth=4), False, False),
     (DecisionTreeClassifier(max_depth=4), True, True),
@@ -169,6 +170,7 @@ testdata = [
     (Pipeline([("n", Normalizer(norm="l1")), ("l", LinearRegression())]), True, False),
     (Pipeline([("n", Normalizer(norm="l2")), ("l", LinearRegression())]), True, False),
     (Pipeline([("n", Normalizer(norm="max")), ("l", LinearRegression())]), True, False),
+    (Pipeline([("b", Binarizer()), ("l", LinearRegression())]), True, False),
 ]
 
 
