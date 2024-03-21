@@ -102,6 +102,11 @@ to insert it in a SCIP model.
        <sklearn.cluster.MiniBatchKMeans>`
      - :py:mod:`add_centroid_cluster_constr
        <pyscipopt_ml.sklearn.centroid_cluster>`
+   * - Pipeline
+     - :external:py:class:`Pipeline
+       <sklearn.pipeline.Pipeline>`
+     - :py:mod:`add_pipeline_constr
+       <pyscipopt_ml.sklearn.pipeline>`
 
 PyTorch
 -------

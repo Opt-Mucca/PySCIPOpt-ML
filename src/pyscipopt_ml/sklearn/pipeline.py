@@ -1,5 +1,13 @@
 """Module for formulating a :external+sklearn:py:class:`sklearn.pipeline.Pipeline`
 into a PySCIPOpt Model.
+The pipeline's transformers (or preprocessing steps) can be any of the following:
+    - :external+sklearn:py:class:`sklearn.preprocessing.StandardScalar`
+    - :external+sklearn:py:class:`sklearn.preprocessing.PolynomialFeatures`
+    - :external+sklearn:py:class:`sklearn.preprocessing.Normalizer`
+    - :external+sklearn:py:class:`sklearn.preprocessing.Binarizer`
+
+The final step of the pipeline must be a valid predictor.
+
 """
 
 from ..exceptions import NoModel
