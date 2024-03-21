@@ -136,7 +136,7 @@ class RandomForestConstr(SKgetter, AbstractPredictorConstr):
                 self.output_size = predictor.n_classes_
         else:
             self.output_size = predictor.n_outputs_
-        SKgetter.__init__(self, predictor, input_vars)
+        SKgetter.__init__(self, predictor, **kwargs)
         AbstractPredictorConstr.__init__(
             self, scip_model, input_vars, output_vars, unique_naming_prefix, **kwargs
         )

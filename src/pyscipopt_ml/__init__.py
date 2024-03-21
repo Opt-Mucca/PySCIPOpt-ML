@@ -15,3 +15,4 @@ for documentation.
 
 from ._version import __version__
 from .add_predictor import add_predictor_constr
+from .registered_predictors import sklearn_convertors

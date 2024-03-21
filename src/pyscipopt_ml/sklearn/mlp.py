@@ -111,7 +111,7 @@ class MLPConstr(SKgetter, BaseNNConstr):
         classification=False,
         **kwargs,
     ):
-        SKgetter.__init__(self, predictor, input_vars, **kwargs)
+        SKgetter.__init__(self, predictor, **kwargs)
         self.classification = classification
         if self.classification and predictor.n_outputs_ <= 2:
             self.output_size = 1

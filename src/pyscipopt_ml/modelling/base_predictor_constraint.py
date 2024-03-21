@@ -24,16 +24,22 @@ class AbstractPredictorConstr(ABC):
     """
 
     def __init__(
-        self, scip_model, input_vars, output_vars=None, unique_naming_prefix="", **kwargs
+        self,
+        scip_model,
+        input_vars,
+        output_vars=None,
+        unique_naming_prefix="",
+        skip_validate=False,
+        **kwargs,
     ):
         self.scip_model = scip_model
         self.unique_naming_prefix = unique_naming_prefix
-        self._validate(input_vars, output_vars)
+        self._validate(input_vars, output_vars, skip_output=skip_validate)
         self._created_vars = []
         self._created_cons = []
         self._build_predictor_model(**kwargs)
 
-    def _validate(self, input_vars, output_vars=None):
+    def _validate(self, input_vars, output_vars=None, skip_output=False):
         """Validate input and output variables (check shapes, reshape if needed)."""
 
         # Ensure the correct type of input and output is given
@@ -59,35 +65,38 @@ class AbstractPredictorConstr(ABC):
         if input_vars.ndim >= 3:
             input_vars = input_vars.reshape((input_vars.shape[0], -1))
 
-        # In the case of the output being None, create the appropriate output variables here
-        if output_vars is None:
-            output_vars = self._create_output_vars(input_vars)
-
-        # Change the dimensions of the output variables if needed (Always want the number of data points first)
-        if output_vars.ndim == 1:
-            if input_vars.shape[0] == 1:
-                output_vars = output_vars.reshape((1, -1))
-            else:
-                output_vars = output_vars.reshape((-1, 1))
-
-        # Ensure that the variable dimensions match that of the predictor
+        # Ensure that the input variable dimensions match that of the predictor
         if hasattr(self, "input_size") and input_vars.shape[-1] != self.input_size:
             raise ParameterError(
                 f"Input variables dimension don't conform with predictor {type(self)} "
                 + f"Input variable dimensions: {input_vars.shape[-1]} != {self.input_size}"
             )
 
-        if hasattr(self, "output_size") and output_vars.shape[-1] != self.output_size:
-            raise ParameterError(
-                f"Output variable dimensions don't conform with predictor {type(self)} "
-                + f"Output variable dimensions: {output_vars.shape[-1]} != {self.output_size}"
-            )
+        # Skip output validation if requested
+        if not skip_output:
+            # In the case of the output being None, create the appropriate output variables here
+            if output_vars is None:
+                output_vars = self._create_output_vars(input_vars)
 
-        if output_vars.shape[0] != input_vars.shape[0]:
-            raise ParameterError(
-                "Non-conforming dimension between input variables and output variables: "
-                + f"{output_vars.shape[0]} != {input_vars.shape[0]}"
-            )
+            # Change the dimensions of the output variables if needed (Always want the number of data points first)
+            if output_vars.ndim == 1:
+                if input_vars.shape[0] == 1:
+                    output_vars = output_vars.reshape((1, -1))
+                else:
+                    output_vars = output_vars.reshape((-1, 1))
+
+            # Ensure that the output variable dimensions match that of the predictor
+            if hasattr(self, "output_size") and output_vars.shape[-1] != self.output_size:
+                raise ParameterError(
+                    f"Output variable dimensions don't conform with predictor {type(self)} "
+                    + f"Output variable dimensions: {output_vars.shape[-1]} != {self.output_size}"
+                )
+
+            if output_vars.shape[0] != input_vars.shape[0]:
+                raise ParameterError(
+                    "Non-conforming dimension between input variables and output variables: "
+                    + f"{output_vars.shape[0]} != {input_vars.shape[0]}"
+                )
 
         self._input = input_vars
         self._output = output_vars
@@ -119,10 +128,17 @@ class AbstractPredictorConstr(ABC):
             for estimator in self._estimators:
                 created_cons += estimator._created_cons
                 created_vars += estimator._created_vars
+            print(f"Predictor has {len(self._estimators)} many estimators\n")
         if hasattr(self, "_layers"):
             for layer in self._layers:
                 created_cons += layer._created_cons
                 created_vars += layer._created_vars
+            print(f"Predictor has {len(self._layers)} many estimators\n")
+        if hasattr(self, "_steps"):
+            for step in self._steps:
+                created_cons += step._created_cons
+                created_vars += step._created_vars
+            print(f"Predictor has {len(self._steps)} many steps\n")
         for cons_set in created_cons:
             it = np.nditer(cons_set, flags=["multi_index", "refs_ok"])
             for _ in it:

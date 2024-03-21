@@ -8,12 +8,12 @@ from ..var_utils import create_vars
 
 def argmax_bound_formulation(scip_model, _input, output, unique_naming_prefix, one_dim_center=0.5):
     """
-    Create constraints that represent the output of a gradient boosted tree given that the individual decision
-    trees have already been modelled. The constraints ensure binary output of a single class.
+    Create constraints that represent the output of an argmax function applied to _input.
+    The constraints ensure binary output of a single class.
 
     The formulation is different depending on the number of classes. In the case of there being two samples:
 
-    Let c be the regression input \reals^{2}, and z the binary output {0, 1}^{2}
+    Let x be the regression input \reals^{2}, and z the binary output {0, 1}^{2}
     .. math::
 
         \begin{align*}

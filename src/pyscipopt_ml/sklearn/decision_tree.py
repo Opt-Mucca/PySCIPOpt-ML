@@ -149,7 +149,7 @@ class DecisionTreeConstr(SKgetter, AbstractPredictorConstr):
                 self.output_size = predictor.n_classes_
         else:
             self.output_size = predictor.n_outputs_
-        SKgetter.__init__(self, predictor, input_vars, **kwargs)
+        SKgetter.__init__(self, predictor, **kwargs)
 
         formulations = "leafs"
         if formulation not in formulations:

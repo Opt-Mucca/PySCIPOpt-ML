@@ -133,7 +133,7 @@ class GradientBoostingConstr(SKgetter, AbstractPredictorConstr):
     ):
         self.estimators_ = []
         self.classification = classification
-        SKgetter.__init__(self, predictor, input_vars)
+        SKgetter.__init__(self, predictor, **kwargs)
         if self.classification:
             if predictor.n_classes_ <= 2:
                 self.output_size = 1

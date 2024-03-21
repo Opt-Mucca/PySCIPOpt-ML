@@ -95,7 +95,7 @@ class CentroidClusterConstr(SKgetter, AbstractPredictorConstr):
         if formulation not in ["l1", "l2"]:
             raise NoModel(predictor, f"Formulation {formulation} is invalid")
         self.formulation = formulation
-        SKgetter.__init__(self, predictor, input_vars)
+        SKgetter.__init__(self, predictor, **kwargs)
         AbstractPredictorConstr.__init__(
             self, scip_model, input_vars, output_vars, unique_naming_prefix, **kwargs
         )

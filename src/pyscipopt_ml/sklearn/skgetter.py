@@ -9,9 +9,9 @@ from ..modelling import AbstractPredictorConstr
 
 
 class SKgetter(AbstractPredictorConstr):
-    """Utility class for sklearn regression models convertors.
+    """Utility class for sklearn models convertors.
 
-    Implement some common functionalities: check predictor is fitted, output dimension, get error
+    Implement some common functionalities: check predictor is fitted, get error
 
     Attributes
     ----------
@@ -19,15 +19,9 @@ class SKgetter(AbstractPredictorConstr):
         Scikit-Learn predictor embedded into SCIP model.
     """
 
-    def __init__(self, predictor, input_vars, output_type="regular", **kwargs):
+    def __init__(self, predictor, **kwargs):
         check_is_fitted(predictor)
         self.predictor = predictor
-        # predictor._check_feature_names(input_vars, reset=False)
-        # self.output_type = output_type
-        # if hasattr(predictor, "n_features_in_"):
-        #     self._input_shape = predictor.n_features_in_
-        # if hasattr(predictor, "n_outputs_"):
-        #     self._output_shape = predictor.n_outputs_
 
     def get_error(self, eps=None):
         """
@@ -73,5 +67,69 @@ class SKgetter(AbstractPredictorConstr):
                     f"SCIP output values of ML model {self.predictor} have larger than max error {max_error} > {eps}"
                 )
             return error
+
+        raise NoSolution()
+
+
+class SKtransformer(AbstractPredictorConstr):
+    """Utility class for sklearn preprocessing models convertors.
+
+    Implement some common functionalities.
+
+    Attributes
+    ----------
+    transformer
+        Scikit-Learn transformer embedded into SCIP Model.
+    """
+
+    def __init__(
+        self,
+        scip_model,
+        transformer,
+        input_vars,
+        output_vars=None,
+        unique_naming_prefix="",
+        **kwargs,
+    ):
+        self.transformer = transformer
+        check_is_fitted(transformer)
+        super().__init__(scip_model, input_vars, output_vars, unique_naming_prefix, **kwargs)
+        # As transforming units can only ever be used as non-final stages of a pipeline, the output are created vars
+        self._created_vars.append(self.output)
+
+    def get_error(self, eps=None):
+        """Returns error in SCIP's solution with respect to the actual output of the trained predictor
+
+        Parameters
+        ----------
+        eps : float or int or None, optional
+            The maximum allowed tolerance for a mismatch between the actual predictive model and SCIP.
+            If the error is larger than eps an appropriate warning is printed
+
+        Returns
+        -------
+        error: np.ndarray
+            The absolute values of the difference between SCIP's solution and the trained ML model's output given
+            the input as defined by SCIP. The matrix is the same dimension as the output of the fitted transformer.
+            Using sklearn / pyscipopt, the absolute difference between
+            transformer.transform(input) and scip.getVal(output).
+
+        Raises
+        ------
+        NoSolution
+            If SCIP has no solution (either was not optimized or is infeasible).
+        """
+        if self._has_solution:
+            transformer = self.transformer
+            input_values = self.input_values
+
+            transformed = transformer.transform(input_values)
+            if len(transformed.shape) == 1:
+                transformed = transformed.reshape(-1, 1)
+
+            r_val = np.abs(transformed - self.output_values)
+            if eps is not None and np.max(r_val) > eps:
+                print(f"{transformed} != {self.output_values}")
+            return r_val
 
         raise NoSolution()
