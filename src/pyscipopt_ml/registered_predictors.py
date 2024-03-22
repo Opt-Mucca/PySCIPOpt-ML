@@ -14,6 +14,8 @@ def sklearn_convertors():
             add_logistic_regression_constr,
             add_mlp_classifier_constr,
             add_mlp_regressor_constr,
+            add_multi_output_classifier_constr,
+            add_multi_output_regressor_constr,
             add_pipeline_constr,
             add_pls_regression_constr,
             add_random_forest_classifier_constr,
@@ -45,6 +47,8 @@ def sklearn_convertors():
             "KMeans": add_centroid_cluster_constr,
             "MiniBatchKMeans": add_centroid_cluster_constr,
             "Pipeline": add_pipeline_constr,
+            "MultiOutputClassifier": add_multi_output_classifier_constr,
+            "MultiOutputRegressor": add_multi_output_regressor_constr,
         }
 
     return {}

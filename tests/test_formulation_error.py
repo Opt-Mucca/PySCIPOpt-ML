@@ -24,11 +24,13 @@ from sklearn.linear_model import (
     LogisticRegression,
     Ridge,
 )
+from sklearn.multioutput import MultiOutputClassifier, MultiOutputRegressor
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
     Binarizer,
     Normalizer,
+    OneHotEncoder,
     PolynomialFeatures,
     StandardScaler,
 )
@@ -85,6 +87,8 @@ def train_embed_and_optimise(predictor, multi_dimension, classification, n_sampl
             predictor.add(keras.layers.Activation(keras.activations.softmax))
         predictor.compile(optimizer="adam", loss="mse")
     if not isinstance(predictor, ClusterMixin):
+        if isinstance(predictor, MultiOutputClassifier):
+            y = OneHotEncoder(sparse_output=False).fit_transform(y.reshape(-1, 1))
         predictor.fit(X, y)
     else:
         predictor.fit(X)
@@ -140,7 +144,9 @@ testdata = [
     (DecisionTreeClassifier(max_depth=4), True, True),
     (DecisionTreeClassifier(max_depth=4), False, True),
     (GradientBoostingRegressor(max_depth=4, n_estimators=4), False, False),
+    (MultiOutputRegressor(GradientBoostingRegressor(max_depth=4, n_estimators=4)), True, False),
     (GradientBoostingClassifier(max_depth=4, n_estimators=4), True, True),
+    (MultiOutputClassifier(GradientBoostingClassifier(max_depth=4, n_estimators=4)), True, True),
     (RandomForestRegressor(max_depth=4, n_estimators=4), True, False),
     (RandomForestClassifier(max_depth=4, n_estimators=4), True, True),
     (RandomForestClassifier(max_depth=4, n_estimators=4), False, True),
@@ -151,10 +157,12 @@ testdata = [
     (MLPClassifier((10, 10, 10), "relu"), True, True),
     (MLPClassifier((10, 10, 10), "logistic"), True, True),
     (LinearSVR(dual="auto"), False, False),
+    (MultiOutputRegressor(LinearSVR(dual="auto")), True, False),
     (SVR(kernel="poly"), False, False),
     (SVR(kernel="linear"), False, False),
     (LinearSVC(dual="auto", max_iter=5000), False, True),
     (SVC(kernel="poly", degree=2), False, True),
+    (MultiOutputClassifier(SVC(kernel="poly", degree=2)), True, True),
     (XGBRegressor(max_depth=4, n_estimators=4), True, False),
     (XGBRegressor(max_depth=4, n_estimators=4), False, False),
     (XGBRFClassifier(max_depth=4, n_estimators=4), False, True),
