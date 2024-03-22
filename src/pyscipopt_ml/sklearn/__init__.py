@@ -10,6 +10,10 @@ from .gradient_boosting import (
 from .linear_regression import add_linear_regression_constr
 from .logistic_regression import add_logistic_regression_constr
 from .mlp import add_mlp_classifier_constr, add_mlp_regressor_constr
+from .multi_output import (
+    add_multi_output_classifier_constr,
+    add_multi_output_regressor_constr,
+)
 from .pipeline import add_pipeline_constr
 from .pls import add_pls_regression_constr
 from .random_forest import (

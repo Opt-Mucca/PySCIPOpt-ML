@@ -104,6 +104,27 @@ class AbstractPredictorConstr(ABC):
     def _build_predictor_model(self, **kwargs):
         self._mip_model(**kwargs)
 
+    def _get_created_vars_and_cons(self, created_vars, created_cons):
+        created_vars += self._created_vars
+        created_cons += self._created_cons
+        if hasattr(self, "_estimators"):
+            for estimator in self._estimators:
+                created_vars, created_cons = estimator._get_created_vars_and_cons(
+                    created_vars, created_cons
+                )
+        if hasattr(self, "_layers"):
+            for layer in self._layers:
+                created_vars, created_cons = layer._get_created_vars_and_cons(
+                    created_vars, created_cons
+                )
+        if hasattr(self, "_steps"):
+            for step in self._steps:
+                created_vars, created_cons = step._get_created_vars_and_cons(
+                    created_vars, created_cons
+                )
+
+        return created_vars, created_cons
+
     def print_stats(self, file=None):
         """Print statistics on model additions stored by this class.
 
@@ -122,23 +143,7 @@ class AbstractPredictorConstr(ABC):
         n_linear_cons = 0
         n_nonlinear_cons = 0
 
-        created_cons = self._created_cons
-        created_vars = self._created_vars
-        if hasattr(self, "_estimators"):
-            for estimator in self._estimators:
-                created_cons += estimator._created_cons
-                created_vars += estimator._created_vars
-            print(f"Predictor has {len(self._estimators)} many estimators\n")
-        if hasattr(self, "_layers"):
-            for layer in self._layers:
-                created_cons += layer._created_cons
-                created_vars += layer._created_vars
-            print(f"Predictor has {len(self._layers)} many estimators\n")
-        if hasattr(self, "_steps"):
-            for step in self._steps:
-                created_cons += step._created_cons
-                created_vars += step._created_vars
-            print(f"Predictor has {len(self._steps)} many steps\n")
+        created_vars, created_cons = self._get_created_vars_and_cons([], [])
         for cons_set in created_cons:
             it = np.nditer(cons_set, flags=["multi_index", "refs_ok"])
             for _ in it:

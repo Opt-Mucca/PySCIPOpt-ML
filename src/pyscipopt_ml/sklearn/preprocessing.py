@@ -235,7 +235,9 @@ class PolynomialFeaturesConstr(SKtransformer):
                     if power[k] >= 1:
                         scip_expr *= input_var ** power[k]
                 name = self.unique_naming_prefix + f"_poly_{i}_{j}"
-                poly_cons = self.scip_model.addCons(self.output[i][j] == scip_expr, name=name)
+                poly_cons[i][j] = self.scip_model.addCons(
+                    self.output[i][j] == scip_expr, name=name
+                )
 
         self._created_cons.append(poly_cons)
 
@@ -336,7 +338,7 @@ class NormalizerConstr(SKtransformer):
                 raise NoModel(self.transformer, f"Norm {norm} is not supported.")
             for j in range(n_features):
                 name = f"norm_cons_{i}_{j}"
-                norm_cons = self.scip_model.addCons(
+                norm_cons[i][j] = self.scip_model.addCons(
                     self.output[i][j] == self.input[i][j] / scale, name=name
                 )
 

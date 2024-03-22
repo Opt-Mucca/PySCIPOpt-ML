@@ -1,10 +1,10 @@
 """Module for formulating a :external+sklearn:py:class:`sklearn.pipeline.Pipeline`
 into a PySCIPOpt Model.
 The pipeline's transformers (or preprocessing steps) can be any of the following:
-    - :external+sklearn:py:class:`sklearn.preprocessing.StandardScalar`
-    - :external+sklearn:py:class:`sklearn.preprocessing.PolynomialFeatures`
-    - :external+sklearn:py:class:`sklearn.preprocessing.Normalizer`
-    - :external+sklearn:py:class:`sklearn.preprocessing.Binarizer`
+- :external+sklearn:py:class:`sklearn.preprocessing.StandardScaler`
+- :external+sklearn:py:class:`sklearn.preprocessing.PolynomialFeatures`
+- :external+sklearn:py:class:`sklearn.preprocessing.Normalizer`
+- :external+sklearn:py:class:`sklearn.preprocessing.Binarizer`
 
 The final step of the pipeline must be a valid predictor.
 
@@ -69,7 +69,7 @@ class PipelineConstr(SKgetter, AbstractPredictorConstr):
     """
 
     def __init__(
-        self, scip_model, pipeline, input_vars, output_vars=None, unique_naming_prefix="", **kwargs
+        self, scip_model, pipeline, input_vars, output_vars, unique_naming_prefix, **kwargs
     ):
         self._steps = []
         SKgetter.__init__(self, pipeline, **kwargs)

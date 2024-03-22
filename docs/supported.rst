@@ -107,6 +107,15 @@ to insert it in a SCIP model.
        <sklearn.pipeline.Pipeline>`
      - :py:mod:`add_pipeline_constr
        <pyscipopt_ml.sklearn.pipeline>`
+   * - MultiOutput
+     - :external:py:class:`MultiOutputClassifier
+       <sklearn.multioutput.MultiOutputClassifier>`
+       :external:py:class:`MultiOutputRegressor
+       <sklearn.multioutput.MultiOutputRegressor>`
+     - :py:mod:`add_multi_output_classifier_constr
+       <pyscipopt_ml.sklearn.multi_output>`
+       :py:mod:`add_multi_output_regressor_constr
+       <pyscipopt_ml.sklearn.multi_output>`
 
 PyTorch
 -------

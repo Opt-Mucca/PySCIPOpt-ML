@@ -16,6 +16,7 @@ Functions and modeling object for Scikit-learn models
   api/PipelineConstr
   api/SupportVectorConstr
   api/MLPConstr
+  api/MultiOutputConstr
 
 Utility
 
