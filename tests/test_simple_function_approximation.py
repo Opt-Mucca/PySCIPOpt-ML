@@ -27,8 +27,8 @@ with ReLU activation functions:
 }
 
 Let there be two random quadratic functions:
-xQ_1x + A_1x + c_1
-xQ_2x + A_2x + c_2
+xQ_1x + a_1x + c_1
+xQ_2x + a_2x + c_2
 
 Let f be a NN that approximates the first quadratic function, and g be a NN
 that approximates the second quadratic function.
@@ -42,67 +42,67 @@ min(f(x))
 
 
 def build_and_optimise_function_approximation_model(
-    seed=42,
     n_inputs=5,
     n_samples=1000,
     framework="sklearn",
-    layers_sizes=(20, 20, 10),
+    layer_size=8,
+    training_seed=42,
+    data_seed=42,
     build_only=False,
 ):
-    assert len(layers_sizes) == 3
-
     X, y_1, y_2 = build_random_quadratic_functions(
-        seed=seed, n_inputs=n_inputs, n_samples=n_samples
+        seed=data_seed, n_inputs=n_inputs, n_samples=n_samples
     )
 
     if framework == "sklearn":
+        hidden_layer_sizes = tuple([layer_size for i in range(3)])
         reg_1 = MLPRegressor(
-            random_state=seed,
-            hidden_layer_sizes=(layers_sizes[0], layers_sizes[1], layers_sizes[2]),
+            random_state=training_seed,
+            hidden_layer_sizes=hidden_layer_sizes,
         ).fit(X, y_1.reshape(-1))
         reg_2 = MLPRegressor(
-            random_state=seed,
-            hidden_layer_sizes=(layers_sizes[0], layers_sizes[1], layers_sizes[2]),
+            random_state=training_seed,
+            hidden_layer_sizes=hidden_layer_sizes,
         ).fit(X, y_2.reshape(-1))
     elif framework == "keras":
-        keras.utils.set_random_seed(seed)
+        keras.utils.set_random_seed(training_seed)
         reg_1 = keras.Sequential()
         reg_1.add(keras.Input(shape=(n_inputs,)))
-        reg_1.add(keras.layers.Dense(layers_sizes[0], activation="linear"))
+        reg_1.add(keras.layers.Dense(layer_size, activation="linear"))
         reg_1.add(keras.layers.Activation(keras.activations.relu))
-        reg_1.add(keras.layers.Dense(layers_sizes[1], activation="sigmoid"))
-        reg_1.add(keras.layers.Dense(layers_sizes[2], activation="relu"))
+        reg_1.add(keras.layers.Dense(layer_size, activation="sigmoid"))
+        reg_1.add(keras.layers.Dense(layer_size, activation="relu"))
         reg_1.add(keras.layers.Dense(1, activation="linear"))
         reg_1.compile(optimizer="adam", loss="mse")
-        reg_1.fit(X, y_1, batch_size=32, epochs=50)
+        reg_1.fit(X, y_1, batch_size=32, epochs=200)
         reg_2 = keras.Sequential()
         reg_2.add(keras.Input(shape=(n_inputs,)))
-        reg_2.add(keras.layers.Dense(layers_sizes[0], activation="linear"))
+        reg_2.add(keras.layers.Dense(layer_size, activation="linear"))
         reg_2.add(keras.layers.Activation(keras.activations.sigmoid))
-        reg_2.add(keras.layers.Dense(layers_sizes[1], activation="tanh"))
-        reg_2.add(keras.layers.Dense(layers_sizes[2], activation="relu"))
+        reg_2.add(keras.layers.Dense(layer_size, activation="tanh"))
+        reg_2.add(keras.layers.Dense(layer_size, activation="relu"))
         reg_2.add(keras.layers.Dense(1, activation="linear"))
         reg_2.compile(optimizer="adam", loss="mse")
         reg_2.fit(X, y_2, batch_size=32, epochs=200)
     elif framework == "torch":
-        torch.random.manual_seed(seed)
+        torch.random.manual_seed(training_seed)
         reg_1 = nn.Sequential(
-            nn.Linear(n_inputs, layers_sizes[0]),
+            nn.Linear(n_inputs, layer_size),
             nn.ReLU(),
-            nn.Linear(layers_sizes[0], layers_sizes[1]),
+            nn.Linear(layer_size, layer_size),
             nn.ReLU(),
-            nn.Linear(layers_sizes[1], layers_sizes[2]),
+            nn.Linear(layer_size, layer_size),
             nn.ReLU(),
-            nn.Linear(layers_sizes[2], 1),
+            nn.Linear(layer_size, 1),
         )
         reg_2 = nn.Sequential(
-            nn.Linear(n_inputs, layers_sizes[0]),
+            nn.Linear(n_inputs, layer_size),
             nn.ReLU(),
-            nn.Linear(layers_sizes[0], layers_sizes[1]),
+            nn.Linear(layer_size, layer_size),
             nn.ReLU(),
-            nn.Linear(layers_sizes[1], layers_sizes[2]),
+            nn.Linear(layer_size, layer_size),
             nn.ReLU(),
-            nn.Linear(layers_sizes[2], 1),
+            nn.Linear(layer_size, 1),
         )
 
         # Convert data into PyTorch tensors
@@ -152,10 +152,10 @@ def build_and_optimise_function_approximation_model(
     # Now build the SCIP Model and embed the neural networks
     scip, input_vars, output_vars = build_basic_scip_model(n_inputs)
     mlp_cons_1 = add_predictor_constr(
-        scip, reg_1, input_vars[0], output_vars[0], unique_naming_prefix="reg_1_"
+        scip, reg_1, input_vars, output_vars[0], unique_naming_prefix="reg_1_"
     )
     mlp_cons_2 = add_predictor_constr(
-        scip, reg_2, input_vars[1], output_vars[1], unique_naming_prefix="reg_2_"
+        scip, reg_2, input_vars, output_vars[1], unique_naming_prefix="reg_2_"
     )
 
     if not build_only:
@@ -208,13 +208,12 @@ def build_basic_scip_model(n_inputs):
     scip = Model()
 
     # Create the input variables
-    input_vars = np.zeros((2, n_inputs), dtype=object)
-    for i in range(2):
-        for j in range(n_inputs):
-            # Tight bounds are important for MIP formulations of neural networks. They often drastically improve
-            # performance. As our training data is in the range [-10, 10], we pass that as bounds [-10, 10].
-            # These bounds will then propagate to other variables.
-            input_vars[i][j] = scip.addVar(name=f"x_{i}_{j}", vtype="C", lb=-10, ub=10)
+    input_vars = np.zeros((1, n_inputs), dtype=object)
+    for i in range(n_inputs):
+        # Tight bounds are important for MIP formulations of neural networks. They often drastically improve
+        # performance. As our training data is in the range [-10, 10], we pass that as bounds [-10, 10].
+        # These bounds will then propagate to other variables.
+        input_vars[0][i] = scip.addVar(name=f"x_{i}", vtype="C", lb=-10, ub=10)
 
     # Create the output variables. (Note that these variables will be automatically constructed if not specified)
     output_vars = np.zeros((2, 1), dtype=object)
@@ -230,17 +229,22 @@ def build_basic_scip_model(n_inputs):
 
 def test_sklearn_mlp_regression():
     scip = build_and_optimise_function_approximation_model(
-        seed=42, n_inputs=5, n_samples=1000, framework="sklearn", layers_sizes=(20, 20, 10)
+        data_seed=42,
+        training_seed=42,
+        n_inputs=5,
+        n_samples=1000,
+        framework="sklearn",
+        layer_size=8,
     )
 
 
 def test_torch_sequential_regression():
     scip = build_and_optimise_function_approximation_model(
-        seed=42, n_inputs=5, n_samples=1000, framework="torch", layers_sizes=(20, 20, 10)
+        data_seed=42, training_seed=42, n_inputs=5, n_samples=1000, framework="torch", layer_size=8
     )
 
 
 def test_keras_sequential_regression():
     scip = build_and_optimise_function_approximation_model(
-        seed=42, n_inputs=5, n_samples=1000, framework="keras", layers_sizes=(10, 10, 10)
+        data_seed=42, training_seed=42, n_inputs=5, n_samples=1000, framework="keras", layer_size=3
     )

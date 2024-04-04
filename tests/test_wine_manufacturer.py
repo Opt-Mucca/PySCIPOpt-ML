@@ -1,9 +1,8 @@
-import pdb
-
 import numpy as np
 from lightgbm import LGBMRegressor
 from pyscipopt import Model, quicksum
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.neural_network import MLPRegressor
 from utils import read_csv_to_dict
 from xgboost import XGBRegressor, XGBRFRegressor
 
@@ -62,22 +61,25 @@ max(sum_i y[i])
 
 
 def build_and_optimise_wine_manufacturer(
-    seed=42,
+    data_seed=42,
+    training_seed=42,
     n_vineyards=35,
     n_wines_to_produce=5,
-    min_wine_quality=4.25,
     sklearn_xgboost_lightgbm="sklearn",
-    gbdt_or_rf="rf",
-    n_estimators=3,
+    gbdt_rf_or_mlp="rf",
+    n_estimators_layers=3,
     max_depth=3,
+    layer_size=16,
     epsilon=0.0001,
     build_only=False,
 ):
     assert sklearn_xgboost_lightgbm in ("sklearn", "xgboost", "lightgbm")
-    assert gbdt_or_rf in ("gbdt", "rf")
+    assert gbdt_rf_or_mlp in ("gbdt", "rf", "mlp")
+    data_random_state = np.random.RandomState(data_seed)
+    training_random_state = np.random.RandomState(training_seed)
 
     # Path to red wine data
-    data_dict = read_csv_to_dict("./tests/data/wineQualityReds.csv")
+    data_dict = read_csv_to_dict("./tests/data/red_wine_quality.csv")
 
     features = [
         "fixed.acidity",
@@ -105,33 +107,48 @@ def build_and_optimise_wine_manufacturer(
     X = np.swapaxes(np.array(X), 0, 1)
 
     # Train the ML predictor
-    if sklearn_xgboost_lightgbm == "sklearn":
-        if gbdt_or_rf == "rf":
+    if gbdt_rf_or_mlp == "mlp":
+        hidden_layers = tuple([layer_size for i in range(n_estimators_layers)])
+        reg = MLPRegressor(
+            random_state=training_random_state, hidden_layer_sizes=hidden_layers
+        ).fit(X, quality)
+    elif sklearn_xgboost_lightgbm == "sklearn":
+        if gbdt_rf_or_mlp == "rf":
             reg = RandomForestRegressor(
-                random_state=seed, n_estimators=n_estimators, max_depth=max_depth
+                random_state=training_random_state,
+                n_estimators=n_estimators_layers,
+                max_depth=max_depth,
             ).fit(X, quality)
         else:
             reg = GradientBoostingRegressor(
-                random_state=seed, n_estimators=n_estimators, max_depth=max_depth
+                random_state=training_random_state,
+                n_estimators=n_estimators_layers,
+                max_depth=max_depth,
             ).fit(X, quality)
     elif sklearn_xgboost_lightgbm == "xgboost":
-        if gbdt_or_rf == "gbdt":
+        if gbdt_rf_or_mlp == "gbdt":
             reg = XGBRegressor(
-                random_state=seed, n_estimators=n_estimators, max_depth=max_depth
+                random_state=training_random_state,
+                n_estimators=n_estimators_layers,
+                max_depth=max_depth,
             ).fit(X, quality)
         else:
             reg = XGBRFRegressor(
-                random_state=seed, n_estimators=n_estimators, max_depth=max_depth
+                random_state=training_random_state,
+                n_estimators=n_estimators_layers,
+                max_depth=max_depth,
             ).fit(X, quality)
     else:
-        if gbdt_or_rf == "gbdt":
+        if gbdt_rf_or_mlp == "gbdt":
             reg = LGBMRegressor(
-                random_state=seed, n_estimators=n_estimators, max_depth=max_depth
+                random_state=training_random_state,
+                n_estimators=n_estimators_layers,
+                max_depth=max_depth,
             ).fit(X, quality)
         else:
             reg = LGBMRegressor(
-                random_state=seed,
-                n_estimators=n_estimators,
+                random_state=training_random_state,
+                n_estimators=n_estimators_layers,
                 max_depth=max_depth,
                 boosting_type="rf",
                 bagging_freq=1,
@@ -139,11 +156,10 @@ def build_and_optimise_wine_manufacturer(
             ).fit(X, quality)
 
     # Create artificial data from some vineyards
-    np.random.seed(seed)
     vineyard_order = np.arange(X.shape[0])
-    np.random.shuffle(vineyard_order)
-    vineyard_litre_limits = np.random.uniform(0.25, 0.35, n_vineyards)
-    vineyard_costs = np.random.uniform(1, 2, n_vineyards)
+    data_random_state.shuffle(vineyard_order)
+    vineyard_litre_limits = data_random_state.uniform(0.25, 0.35, n_vineyards)
+    vineyard_costs = data_random_state.uniform(1, 2, n_vineyards)
     vineyard_features = []
     low_quality_vineyards_i = 0
     for i in vineyard_order:
@@ -213,6 +229,7 @@ def build_and_optimise_wine_manufacturer(
     )
 
     # Add a constraint ensuring minimum wine quality on those produced
+    min_wine_quality = data_random_state.uniform(4.2, 4.5)
     for i in range(n_wines_to_produce):
         scip.addCons(quality_vars[i][0] >= min_wine_quality, name=f"min_quality_{i}")
 
@@ -235,77 +252,91 @@ def build_and_optimise_wine_manufacturer(
 
 def test_wine_manufacturer_sk_rf():
     scip = build_and_optimise_wine_manufacturer(
-        seed=42,
+        data_seed=42,
+        training_seed=42,
         n_vineyards=35,
         n_wines_to_produce=5,
-        min_wine_quality=4.25,
         sklearn_xgboost_lightgbm="sklearn",
-        gbdt_or_rf="rf",
-        n_estimators=3,
+        gbdt_rf_or_mlp="rf",
         max_depth=3,
+        n_estimators_layers=3,
     )
 
 
 def test_wine_manufacturer_sk_gbdt():
     scip = build_and_optimise_wine_manufacturer(
-        seed=42,
+        data_seed=42,
+        training_seed=42,
         n_vineyards=35,
         n_wines_to_produce=5,
-        min_wine_quality=4.25,
         sklearn_xgboost_lightgbm="sklearn",
-        gbdt_or_rf="gbdt",
-        n_estimators=3,
+        gbdt_rf_or_mlp="gbdt",
         max_depth=3,
+        n_estimators_layers=3,
     )
 
 
 def test_wine_manufacturer_xgb_rf():
     scip = build_and_optimise_wine_manufacturer(
-        seed=42,
+        data_seed=21,
+        training_seed=21,
         n_vineyards=35,
         n_wines_to_produce=5,
-        min_wine_quality=4.25,
         sklearn_xgboost_lightgbm="xgboost",
-        gbdt_or_rf="rf",
-        n_estimators=3,
+        gbdt_rf_or_mlp="rf",
         max_depth=3,
+        n_estimators_layers=3,
     )
 
 
 def test_wine_manufacturer_xgb_gbdt():
     scip = build_and_optimise_wine_manufacturer(
-        seed=42,
+        data_seed=21,
+        training_seed=21,
         n_vineyards=35,
         n_wines_to_produce=5,
-        min_wine_quality=4.25,
         sklearn_xgboost_lightgbm="xgboost",
-        gbdt_or_rf="gbdt",
-        n_estimators=3,
+        gbdt_rf_or_mlp="gbdt",
         max_depth=3,
+        n_estimators_layers=3,
     )
 
 
 def test_wine_manufacturer_lgb_rf():
     scip = build_and_optimise_wine_manufacturer(
-        seed=42,
+        data_seed=18,
+        training_seed=18,
         n_vineyards=35,
         n_wines_to_produce=5,
-        min_wine_quality=4.25,
         sklearn_xgboost_lightgbm="lightgbm",
-        gbdt_or_rf="rf",
-        n_estimators=3,
+        gbdt_rf_or_mlp="rf",
         max_depth=3,
+        n_estimators_layers=3,
     )
 
 
 def test_wine_manufacturer_lgb_gbdt():
     scip = build_and_optimise_wine_manufacturer(
-        seed=42,
+        data_seed=18,
+        training_seed=18,
         n_vineyards=35,
         n_wines_to_produce=5,
-        min_wine_quality=4.25,
         sklearn_xgboost_lightgbm="lightgbm",
-        gbdt_or_rf="gbdt",
-        n_estimators=3,
+        gbdt_rf_or_mlp="gbdt",
         max_depth=3,
+        n_estimators_layers=3,
+    )
+
+
+def test_wine_manufacturer_sklearn_mlp():
+    scip = build_and_optimise_wine_manufacturer(
+        data_seed=18,
+        training_seed=18,
+        n_vineyards=35,
+        n_wines_to_produce=5,
+        sklearn_xgboost_lightgbm="sklearn",
+        gbdt_rf_or_mlp="mlp",
+        max_depth=3,
+        n_estimators_layers=3,
+        layer_size=10,
     )
