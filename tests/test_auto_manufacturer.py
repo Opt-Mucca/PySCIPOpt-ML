@@ -1,6 +1,7 @@
 import numpy as np
 from pyscipopt import Model
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.neural_network import MLPRegressor
 from utils import read_csv_to_dict
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
@@ -55,16 +56,19 @@ max(amount_sold)
 
 
 def build_and_optimise_auto_manufacturer(
-    seed=0,
-    gbdt_or_rf="gbdt",
-    max_depth=6,
-    n_estimators=6,
-    min_fuel_efficiency=40,
-    min_resale_ratio=0.8,
+    training_seed=42,
+    data_seed=42,
+    gbdt_rf_or_mlp="gbdt",
+    max_depth_or_layer_size=6,
+    n_estimators_or_layers=6,
     build_only=False,
 ):
+    # Initialise a numpy random state
+    data_random_state = np.random.RandomState(data_seed)
+    training_random_state = np.random.RandomState(training_seed)
+
     # Path to car data
-    data_dict = read_csv_to_dict("./tests/data/Car_sales.csv")
+    data_dict = read_csv_to_dict("./tests/data/car_sales.csv")
 
     # Get an array of the features
     features = [
@@ -99,26 +103,53 @@ def build_and_optimise_auto_manufacturer(
     X = np.swapaxes(np.array(X), 0, 1)
 
     # Create the prediction models
-    if gbdt_or_rf == "gbdt":
+    if gbdt_rf_or_mlp == "gbdt":
         reg_sales = GradientBoostingRegressor(
-            n_estimators=n_estimators, max_depth=max_depth, random_state=seed
+            n_estimators=n_estimators_or_layers,
+            max_depth=max_depth_or_layer_size,
+            random_state=training_random_state,
         ).fit(np.concatenate((X, price), axis=1), amount_sales.reshape(-1))
         reg_price = GradientBoostingRegressor(
-            n_estimators=n_estimators, max_depth=max_depth, random_state=seed
+            n_estimators=n_estimators_or_layers,
+            max_depth=max_depth_or_layer_size,
+            random_state=training_random_state,
         ).fit(X, price.reshape(-1))
         reg_resale = GradientBoostingRegressor(
-            n_estimators=n_estimators, max_depth=max_depth, random_state=seed
+            n_estimators=n_estimators_or_layers,
+            max_depth=max_depth_or_layer_size,
+            random_state=training_random_state,
         ).fit(np.concatenate((X, price), axis=1), resale_price.reshape(-1))
-    else:
+    elif gbdt_rf_or_mlp == "rf":
         reg_sales = RandomForestRegressor(
-            n_estimators=n_estimators, max_depth=max_depth, random_state=seed
+            n_estimators=n_estimators_or_layers,
+            max_depth=max_depth_or_layer_size,
+            random_state=training_random_state,
         ).fit(np.concatenate((X, price), axis=1), amount_sales.reshape(-1))
         reg_price = RandomForestRegressor(
-            n_estimators=n_estimators, max_depth=max_depth, random_state=seed
+            n_estimators=n_estimators_or_layers,
+            max_depth=max_depth_or_layer_size,
+            random_state=training_random_state,
         ).fit(X, price.reshape(-1))
         reg_resale = RandomForestRegressor(
-            n_estimators=n_estimators, max_depth=max_depth, random_state=seed
+            n_estimators=n_estimators_or_layers,
+            max_depth=max_depth_or_layer_size,
+            random_state=training_random_state,
         ).fit(np.concatenate((X, price), axis=1), resale_price.reshape(-1))
+    elif gbdt_rf_or_mlp == "mlp":
+        hidden_layer_sizes = tuple(
+            [max_depth_or_layer_size for i in range(n_estimators_or_layers)]
+        )
+        reg_sales = MLPRegressor(
+            random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
+        ).fit(np.concatenate((X, price), axis=1), amount_sales.reshape(-1))
+        reg_price = MLPRegressor(
+            random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
+        ).fit(X, price.reshape(-1))
+        reg_resale = MLPRegressor(
+            random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
+        ).fit(np.concatenate((X, price), axis=1), resale_price.reshape(-1))
+    else:
+        raise ValueError(f"Unknown value: {gbdt_rf_or_mlp}")
 
     # Create the SCIP Model
     scip = Model()
@@ -169,6 +200,7 @@ def build_and_optimise_auto_manufacturer(
     # Now add constraints to the model. Our constraints are that the new car is sufficiently different from those
     # already on the market, and that the resale value remains relatively high.
     top_selling_ids = np.argsort(price.reshape(-1))[-n_car_comparisons:]
+    min_diff = data_random_state.uniform(low=2.8, high=3.3)
     for j, car_idx in enumerate(top_selling_ids):
         sum_slack = 0
         for i in range(1, n_features):
@@ -186,7 +218,7 @@ def build_and_optimise_auto_manufacturer(
                 name=f"l1_diff_{i}_{j}",
             )
             sum_slack += (pos_slack[i][j] + neg_slack[i][j]) / big_m
-        scip.addCons(sum_slack >= 3, name=f"min_diff_{j}")
+        scip.addCons(sum_slack >= min_diff, name=f"min_diff_{j}")
 
     # Now add the ML predictor constraints
     pred_cons = [
@@ -217,6 +249,8 @@ def build_and_optimise_auto_manufacturer(
     ]
 
     # Add constraints that the resale value of the car must be sufficiently large and that the car is fuel efficient
+    min_resale_ratio = data_random_state.uniform(low=0.70, high=0.75)
+    min_fuel_efficiency = data_random_state.uniform(low=38, high=43)
     scip.addCons(resale_vars[0][0] >= min_resale_ratio * price_vars[0][0], name="min_resale")
     scip.addCons(feature_vars[0][8] >= min_fuel_efficiency, name="fuel_efficient")
 
@@ -225,8 +259,7 @@ def build_and_optimise_auto_manufacturer(
     if not build_only:
         # Optimise the SCIP model
         scip.optimize()
-
-        # We can check the "error" of the MIP embedding by determining the difference between the SKLearn and SCIP output
+        # We can check the "error" of the MIP embedding by determining the difference SKLearn and SCIP output
         for predictor_constraint in pred_cons:
             if np.max(predictor_constraint.get_error()) > 10**-4:
                 error = np.max(predictor_constraint.get_error())
@@ -235,12 +268,34 @@ def build_and_optimise_auto_manufacturer(
     return scip
 
 
-def test_auto_manufacturer():
+def test_gbdt_auto_manufacturer():
     scip = build_and_optimise_auto_manufacturer(
-        seed=0,
-        gbdt_or_rf="gbdt",
-        max_depth=6,
-        n_estimators=6,
-        min_fuel_efficiency=40,
-        min_resale_ratio=0.8,
+        training_seed=42,
+        data_seed=42,
+        gbdt_rf_or_mlp="gbdt",
+        max_depth_or_layer_size=5,
+        n_estimators_or_layers=5,
+        build_only=False,
+    )
+
+
+def test_rf_auto_manufacturer():
+    scip = build_and_optimise_auto_manufacturer(
+        training_seed=42,
+        data_seed=42,
+        gbdt_rf_or_mlp="rf",
+        max_depth_or_layer_size=5,
+        n_estimators_or_layers=5,
+        build_only=False,
+    )
+
+
+def test_mlp_auto_manufacturer():
+    scip = build_and_optimise_auto_manufacturer(
+        training_seed=42,
+        data_seed=42,
+        gbdt_rf_or_mlp="mlp",
+        max_depth_or_layer_size=6,
+        n_estimators_or_layers=2,
+        build_only=False,
     )

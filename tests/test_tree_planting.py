@@ -1,6 +1,8 @@
 import numpy as np
 from pyscipopt import Model, quicksum
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
 from utils import read_csv_to_dict
 
@@ -58,19 +60,24 @@ max(sum_{i,j,t} s'[i][j][t])
 
 
 def build_and_optimise_tree_planting(
-    seed=42,
+    data_seed=42,
+    training_seed=42,
     predictor_type="linear",
     max_depth=5,
+    n_estimators_layers=2,
+    layer_size=8,
     n_grid_size=10,
     min_trees=(2, 2, 2, 2),
-    max_sterilise=10,
-    costs=(25, 30, 40, 50),
-    max_budget=3350,
     build_only=False,
 ):
-    assert predictor_type in ("linear", "decision_tree")
+    assert predictor_type in ("linear", "decision_tree", "gbdt", "mlp")
+    training_random_state = np.random.RandomState(training_seed)
+    data_random_state = np.random.RandomState(data_seed)
+    max_sterilise = data_random_state.randint(low=8, high=13)
+    costs = data_random_state.uniform(low=25, high=45, size=4)
+    max_budget = (n_grid_size**2) * np.median(costs)
     # Read the csv data
-    data_dict = read_csv_to_dict("./tests/data/Tree_Data.csv")
+    data_dict = read_csv_to_dict("./tests/data/tree_survivability.csv")
 
     # Extract the min and max light values
     light_values = np.array(
@@ -110,8 +117,23 @@ def build_and_optimise_tree_planting(
         y_i = np.array(y[i])
         if predictor_type == "linear":
             reg = LinearRegression().fit(X_i, y_i)
+        elif predictor_type == "decision_tree":
+            reg = DecisionTreeRegressor(
+                random_state=training_random_state, max_depth=max_depth
+            ).fit(X_i, y_i)
+        elif predictor_type == "gbdt":
+            reg = GradientBoostingRegressor(
+                random_state=training_random_state,
+                n_estimators=n_estimators_layers,
+                max_depth=max_depth,
+            ).fit(X_i, y_i.reshape(-1))
+        elif predictor_type == "mlp":
+            hidden_layers = tuple([layer_size for i in range(n_estimators_layers)])
+            reg = MLPRegressor(
+                random_state=training_random_state, hidden_layer_sizes=hidden_layers
+            ).fit(X_i, y_i.reshape(-1))
         else:
-            reg = DecisionTreeRegressor(random_state=seed, max_depth=max_depth).fit(X_i, y_i)
+            raise ValueError(f"Unknown predictor type: {predictor_type}")
         regression_models.append(reg)
 
     # Initialise the SCIP Model
@@ -182,17 +204,14 @@ def build_and_optimise_tree_planting(
                     name=f"tree_survive_ind_{i}_{j}_{k}_1",
                 )
 
-    # Randomly generate the grid characteristics
-    np.random.seed(seed)
-
     # Create feature variables
     feature_variables = np.zeros((n_grid_size, n_grid_size, 7), dtype=object)
     for i in range(n_grid_size):
         light_isf = max_light - ((i / n_grid_size) * (max_light - min_light))
         for j in range(n_grid_size):
-            light_cat = np.random.randint(0, 3)
-            myco = np.random.randint(0, 2)
-            soil_myco = np.random.randint(0, 2)
+            light_cat = data_random_state.randint(0, 3)
+            myco = data_random_state.randint(0, 2)
+            soil_myco = data_random_state.randint(0, 2)
             for k in range(7):
                 if k == 0:
                     feature_variables[i][j][k] = scip.addVar(
@@ -236,6 +255,7 @@ def build_and_optimise_tree_planting(
                 feature_variables.reshape(-1, 7),
                 tree_survive_vars[:, :, i].reshape(-1, 1),
                 unique_naming_prefix=f"predictor_{i}_",
+                epsilon=0.0001,
             )
         )
 
@@ -266,24 +286,51 @@ def build_and_optimise_tree_planting(
 
 def test_tree_planting_linear():
     scip = build_and_optimise_tree_planting(
-        seed=42,
+        data_seed=42,
+        training_seed=42,
         predictor_type="linear",
+        max_depth=5,
+        n_estimators_layers=2,
+        layer_size=8,
         n_grid_size=10,
         min_trees=(2, 2, 2, 2),
-        max_sterilise=10,
-        costs=(25, 30, 40, 50),
-        max_budget=3350,
     )
 
 
 def test_tree_planting_decision_tree():
     scip = build_and_optimise_tree_planting(
-        seed=42,
+        data_seed=42,
+        training_seed=42,
         predictor_type="decision_tree",
         max_depth=5,
+        n_estimators_layers=2,
+        layer_size=8,
         n_grid_size=10,
         min_trees=(2, 2, 2, 2),
-        max_sterilise=10,
-        costs=(25, 30, 40, 50),
-        max_budget=3350,
+    )
+
+
+def test_tree_planing_gbdt():
+    scip = build_and_optimise_tree_planting(
+        data_seed=18,
+        training_seed=35,
+        predictor_type="gbdt",
+        max_depth=5,
+        n_estimators_layers=8,
+        layer_size=8,
+        n_grid_size=10,
+        min_trees=(2, 2, 2, 2),
+    )
+
+
+def test_tree_planting_mlp():
+    scip = build_and_optimise_tree_planting(
+        data_seed=18,
+        training_seed=35,
+        predictor_type="mlp",
+        max_depth=5,
+        n_estimators_layers=3,
+        layer_size=6,
+        n_grid_size=10,
+        min_trees=(2, 2, 2, 2),
     )

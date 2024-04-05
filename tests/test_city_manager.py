@@ -1,5 +1,7 @@
 import numpy as np
 from pyscipopt import Model
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
 from utils import read_csv_to_dict
 
@@ -64,8 +66,11 @@ max(sum_i y[i])
 
 
 def build_and_optimise_city_manager(
-    seed=0,
-    max_depth=6,
+    data_seed=42,
+    training_seed=42,
+    dt_gbdt_or_mlp="dt",
+    max_depth_or_layer_size=6,
+    n_estimators_layers=3,
     n_apartments=50,
     grid_length=5,
     epsilon=0.001,
@@ -75,7 +80,8 @@ def build_and_optimise_city_manager(
     data_dict = read_csv_to_dict("./tests/data/apartments.csv")
 
     # Set the random seed
-    np.random.seed(seed)
+    data_random_state = np.random.RandomState(data_seed)
+    training_random_state = np.random.RandomState(training_seed)
 
     # The features of our predictor. All distance based features are variables.
     features = [
@@ -108,7 +114,23 @@ def build_and_optimise_city_manager(
     X = np.swapaxes(np.array(X), 0, 1)
 
     # Train the ML predictor
-    reg = DecisionTreeRegressor(random_state=seed, max_depth=max_depth).fit(X, y)
+    if dt_gbdt_or_mlp == "dt":
+        reg = DecisionTreeRegressor(
+            random_state=training_random_state, max_depth=max_depth_or_layer_size
+        ).fit(X, y)
+    elif dt_gbdt_or_mlp == "gbdt":
+        reg = GradientBoostingRegressor(
+            random_state=training_random_state,
+            max_depth=max_depth_or_layer_size,
+            n_estimators=n_estimators_layers,
+        ).fit(X, y.reshape(-1))
+    elif dt_gbdt_or_mlp == "mlp":
+        hidden_layers = tuple([max_depth_or_layer_size for i in range(n_estimators_layers)])
+        reg = MLPRegressor(
+            random_state=training_random_state, hidden_layer_sizes=hidden_layers
+        ).fit(X, y.reshape(-1))
+    else:
+        raise ValueError(f"Unknown value: {dt_gbdt_or_mlp}")
 
     # Create the SCIP Model
     scip = Model()
@@ -117,7 +139,7 @@ def build_and_optimise_city_manager(
     # defined by the four corners [(0, 0), (0, grid_length), (grid_length, grid_length), (grid_length, 0)]
     feature_vars = np.zeros((n_apartments, n_features), dtype=object)
     price_vars = np.zeros((n_apartments, 1), dtype=object)
-    apartment_locations = np.random.uniform(0, grid_length, size=(n_apartments, 2))
+    apartment_locations = data_random_state.uniform(0, grid_length, size=(n_apartments, 2))
     rooms = np.random.randint(
         np.min(X[feature_to_idx["rooms"]]),
         np.max(X[feature_to_idx["rooms"]]) + 1,
@@ -319,18 +341,14 @@ def build_and_optimise_city_manager(
                 )
 
     # Embed the ML predictors for each apartment. A small epsilon ensures we match sklearn
-    predictor_constraints = []
-    for i in range(n_apartments):
-        predictor_constraints.append(
-            add_predictor_constr(
-                scip,
-                reg,
-                feature_vars[i],
-                price_vars[i],
-                epsilon=epsilon,
-                unique_naming_prefix=f"predictor_{i}_",
-            )
-        )
+    pred_cons = add_predictor_constr(
+        scip,
+        reg,
+        feature_vars,
+        price_vars,
+        epsilon=epsilon,
+        unique_naming_prefix=f"predictor_",
+    )
 
     # Add the objective to the MIP
     scip.setObjective(-np.sum(price_vars) + (20 * n_apartments))
@@ -338,17 +356,37 @@ def build_and_optimise_city_manager(
     if not build_only:
         # Optimise the SCIP model
         scip.optimize()
-
-        # We can check the "error" of the MIP embedding by determining the difference between the SKLearn and SCIP output
-        for pred_cons in predictor_constraints:
-            if np.max(pred_cons.get_error()) > 10**-4:
-                error = np.max(pred_cons.get_error())
-                raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -4}")
+        # We can check the "error" of the MIP embedding by determining the difference SKLearn and SCIP output
+        if np.max(pred_cons.get_error()) > 10**-4:
+            error = np.max(pred_cons.get_error())
+            raise AssertionError(f"Max error {error} exceeds threshold of {10 ** -4}")
 
     return scip
 
 
-def test_city_manager():
-    scip = build_and_optimise_city_manager(
-        seed=0, max_depth=6, n_apartments=50, grid_length=5, epsilon=0.001
+def test_dt_city_manager():
+    build_and_optimise_city_manager(
+        data_seed=42,
+        training_seed=42,
+        dt_gbdt_or_mlp="dt",
+        max_depth_or_layer_size=6,
+        n_estimators_layers=3,
+        n_apartments=50,
+        grid_length=5,
+        epsilon=0.001,
+        build_only=False,
+    )
+
+
+def test_gbdt_city_manager():
+    build_and_optimise_city_manager(
+        data_seed=50,
+        training_seed=80,
+        dt_gbdt_or_mlp="gbdt",
+        max_depth_or_layer_size=4,
+        n_estimators_layers=3,
+        n_apartments=50,
+        grid_length=5,
+        epsilon=0.001,
+        build_only=False,
     )

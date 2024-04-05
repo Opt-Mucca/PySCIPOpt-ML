@@ -1,5 +1,6 @@
 import numpy as np
 from pyscipopt import Model
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
 from tensorflow import keras
 from utils import read_csv_to_dict
@@ -41,20 +42,45 @@ max(sum_i y[i])
 
 
 def build_and_optimise_water_potability(
-    seed=42,
+    data_seed=42,
+    training_seed=42,
+    predictor_type="mlp",
     n_water_samples=50,
-    layers_sizes=(10, 10, 10),
-    remove_feature_budgets=(2, 20, 200, 1, 20, 20, 1.5, 5, 1),
-    add_feature_budgets=(2.2, 22, 220, 1.1, 22, 22, 1.7, 5.5, 1.1),
+    layer_size=16,
+    max_depth=5,
+    n_estimators_layers=3,
     framework="sklearn",
     build_only=False,
 ):
-    assert len(layers_sizes) == 3
-    assert len(remove_feature_budgets) == 9
-    assert len(add_feature_budgets) == 9
+    assert predictor_type in ("mlp", "gbdt")
+    # Random seed initialisation
+    data_random_state = np.random.RandomState(data_seed)
+    training_random_state = np.random.RandomState(training_seed)
+    remove_feature_budgets = (
+        data_random_state.uniform(1.8, 2.5),
+        data_random_state.uniform(20, 25),
+        data_random_state.uniform(180, 250),
+        data_random_state.uniform(0.9, 1.1),
+        data_random_state.uniform(19, 21),
+        data_random_state.uniform(19, 21),
+        data_random_state.uniform(1.2, 1.8),
+        data_random_state.uniform(4.5, 6),
+        data_random_state.uniform(0.9, 1.1),
+    )
+    add_feature_budgets = (
+        data_random_state.uniform(1.8, 2.5),
+        data_random_state.uniform(20, 25),
+        data_random_state.uniform(180, 250),
+        data_random_state.uniform(0.9, 1.1),
+        data_random_state.uniform(19, 21),
+        data_random_state.uniform(19, 21),
+        data_random_state.uniform(1.2, 1.8),
+        data_random_state.uniform(4.5, 6),
+        data_random_state.uniform(0.9, 1.1),
+    )
 
     # Path to water potability data
-    data_dict = read_csv_to_dict("./tests/data/water.csv")
+    data_dict = read_csv_to_dict("./tests/data/water_quality.csv")
 
     # The features of our predictor. All distance based features are variables.
     features = [
@@ -69,7 +95,6 @@ def build_and_optimise_water_potability(
         "Turbidity",
     ]
     n_features = len(features)
-    np.random.seed(seed)
 
     # Generate the actual input data arrays for the ML predictors
     X = []
@@ -84,27 +109,34 @@ def build_and_optimise_water_potability(
     undrinkable_water_indices = undrinkable_water_indices[:n_water_samples]
 
     # Build the MLP classifier
-    if framework == "sklearn":
-        clf = MLPClassifier(
-            random_state=seed,
-            hidden_layer_sizes=(layers_sizes[0], layers_sizes[1], layers_sizes[2]),
+    if predictor_type == "gbdt":
+        clf = GradientBoostingClassifier(
+            random_state=training_random_state,
+            max_depth=max_depth,
+            n_estimators=n_estimators_layers,
         ).fit(X, y)
-    elif framework == "keras":
-        keras.utils.set_random_seed(seed)
-        clf = keras.Sequential()
-        clf.add(keras.Input(shape=(n_features,)))
-        clf.add(keras.layers.Dense(layers_sizes[0], activation="relu"))
-        clf.add(keras.layers.Dense(layers_sizes[1], activation="relu"))
-        clf.add(keras.layers.Dense(layers_sizes[2], activation="relu"))
-        clf.add(keras.layers.Dense(2, activation="linear"))
-        clf.add(keras.layers.Activation(keras.activations.softmax))
-        clf.compile(optimizer="adam", loss="binary_crossentropy")
-        y_keras = np.zeros((len(y), 2))
-        for i, class_val in enumerate(y):
-            y_keras[i][class_val] = 1
-        clf.fit(X, y_keras, batch_size=256, epochs=50)
     else:
-        raise ValueError(f"Unknown framework: {framework}")
+        if framework == "sklearn":
+            hidden_layers = tuple([layer_size for i in range(n_estimators_layers)])
+            clf = MLPClassifier(
+                random_state=training_random_state,
+                hidden_layer_sizes=hidden_layers,
+            ).fit(X, y)
+        elif framework == "keras":
+            keras.utils.set_random_seed(training_seed)
+            clf = keras.Sequential()
+            clf.add(keras.Input(shape=(n_features,)))
+            for i in range(n_estimators_layers):
+                clf.add(keras.layers.Dense(layer_size, activation="relu"))
+            clf.add(keras.layers.Dense(2, activation="linear"))
+            clf.add(keras.layers.Activation(keras.activations.softmax))
+            clf.compile(optimizer="adam", loss="binary_crossentropy")
+            y_keras = np.zeros((len(y), 2))
+            for i, class_val in enumerate(y):
+                y_keras[i][class_val] = 1
+            clf.fit(X, y_keras, batch_size=256, epochs=50)
+        else:
+            raise ValueError(f"Unknown framework: {framework}")
 
     # Create the SCIP Model
     scip = Model()
@@ -113,7 +145,7 @@ def build_and_optimise_water_potability(
     feature_vars = np.zeros((n_water_samples, n_features), dtype=object)
     features_removed = np.zeros((n_water_samples, n_features), dtype=object)
     features_added = np.zeros((n_water_samples, n_features), dtype=object)
-    if framework == "sklearn":
+    if framework == "sklearn" or predictor_type == "gbdt":
         drinkable_water = np.zeros((n_water_samples, 1), dtype=object)
     else:
         drinkable_water = np.zeros((n_water_samples, 2), dtype=object)
@@ -152,13 +184,14 @@ def build_and_optimise_water_potability(
         )
 
     # Add the ML predictor for predicting water quality of the sample
-    if framework == "sklearn":
+    if framework == "sklearn" or predictor_type == "gbdt":
         pred_cons = add_predictor_constr(
             scip,
             clf,
             feature_vars,
             drinkable_water,
             unique_naming_prefix=f"clf_",
+            epsilon=0.0001,
         )
     else:
         pred_cons = add_predictor_constr(
@@ -171,7 +204,7 @@ def build_and_optimise_water_potability(
         )
 
     # Set the object to maximise the amount of drinkable water after treatment
-    if framework == "sklearn":
+    if framework == "sklearn" or predictor_type == "gbdt":
         scip.setObjective(-np.sum(drinkable_water) + n_water_samples)
     else:
         scip.setObjective(-np.sum(drinkable_water[:, 1]) + n_water_samples)
@@ -188,23 +221,43 @@ def build_and_optimise_water_potability(
     return scip
 
 
-def test_water_potability_sklearn():
+def test_water_potability_sklearn_mlp():
     scip = build_and_optimise_water_potability(
-        seed=42,
+        data_seed=42,
+        training_seed=42,
+        predictor_type="mlp",
         n_water_samples=50,
-        layers_sizes=(10, 10, 10),
-        remove_feature_budgets=(2, 20, 200, 1, 20, 20, 1.5, 5, 1),
-        add_feature_budgets=(2.2, 22, 220, 1.1, 22, 22, 1.7, 5.5, 1.1),
+        layer_size=16,
+        max_depth=5,
+        n_estimators_layers=2,
         framework="sklearn",
+        build_only=False,
     )
 
 
 def test_water_potability_keras():
     scip = build_and_optimise_water_potability(
-        seed=42,
+        data_seed=20,
+        training_seed=20,
+        predictor_type="mlp",
         n_water_samples=50,
-        layers_sizes=(12, 15, 17),
-        remove_feature_budgets=(2, 20, 200, 1, 20, 20, 1.5, 5, 1),
-        add_feature_budgets=(2.2, 22, 220, 1.1, 22, 22, 1.7, 5.5, 1.1),
+        layer_size=16,
+        max_depth=5,
+        n_estimators_layers=2,
         framework="keras",
+        build_only=False,
+    )
+
+
+def test_water_potability_gbdt():
+    scip = build_and_optimise_water_potability(
+        data_seed=18,
+        training_seed=18,
+        predictor_type="gbdt",
+        n_water_samples=50,
+        layer_size=16,
+        max_depth=4,
+        n_estimators_layers=4,
+        framework="keras",
+        build_only=False,
     )

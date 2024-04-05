@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import pytest
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -38,7 +37,7 @@ Let f be the ML predictor that outputs the probability of each label for the inp
 Let image[i][j] be the input image in grey scale with pixel values between 0-1.
 Let x[i][j] the perturbed image in grey scale with pixel values between 0-1.
 Let y be the probability of each label given the ML predictor
-W.l.o.g assume that y[0] is the true label and y[1]is the fake label.
+W.l.o.g assume that y[0] is the true label and y[1] is the fake label.
 
 x[i][j] - image[i][j] <= abs_diff[i][j] for all i, j
 image[i][j] - x[i][j] <= abs_diff[i][j] for all i, j
@@ -50,16 +49,18 @@ max(y[1] - y[0])
 
 
 def build_and_optimise_adversarial_mnist_torch(
-    seed=42,
+    data_seed=42,
+    training_seed=42,
     n_pixel_1d=16,
-    layer_sizes=(40, 20),
-    image_number=10000,
+    layer_size=16,
+    n_layers=2,
     test=True,
     build_only=False,
 ):
-    assert 0 <= image_number < 30000, f"Image number {image_number} out of range"
-    # Set random seed for reproducibility
-    torch.manual_seed(seed)
+    # Set random seed for reproducibility and select the image that is going to be perturbed
+    data_random_state = np.random.RandomState(data_seed)
+    image_number = data_random_state.randint(low=0, high=30000)
+    torch.manual_seed(training_seed)
 
     # Define transformations for the MNIST dataset
     transform = transforms.Compose(
@@ -83,14 +84,12 @@ def build_and_optimise_adversarial_mnist_torch(
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Create the neural network
-    reg = nn.Sequential(
-        nn.Flatten(),
-        nn.Linear(n_pixel_1d**2, layer_sizes[0]),
-        nn.ReLU(),
-        nn.Linear(layer_sizes[0], layer_sizes[1]),
-        nn.ReLU(),
-        nn.Linear(layer_sizes[1], 10),
-    )
+    layers = [nn.Flatten(), nn.Linear(n_pixel_1d**2, layer_size), nn.ReLU()]
+    for i in range(n_layers - 1):
+        layers.append(nn.Linear(layer_size, layer_size))
+        layers.append(nn.ReLU())
+    layers.append(nn.Linear(layer_size, 10))
+    reg = nn.Sequential(*layers)
 
     # If the model is already saved then skip the training step
     saved_neural_network_path = "./tests/data/adversarial.pt"
@@ -167,6 +166,7 @@ def build_and_optimise_adversarial_mnist_torch(
         output_vars[i] = scip.addVar(name=f"y_{i}", vtype="C", lb=None, ub=None)
 
     # Create the difference variables
+    sum_max_diff = data_random_state.uniform(low=4.5, high=5.5)
     abs_diff = np.zeros((n_pixel_1d, n_pixel_1d), dtype=object)
     for i in range(n_pixel_1d):
         for j in range(n_pixel_1d):
@@ -184,7 +184,7 @@ def build_and_optimise_adversarial_mnist_torch(
 
     scip.addCons(
         quicksum(quicksum(abs_diff[i][j] for j in range(n_pixel_1d)) for i in range(n_pixel_1d))
-        <= 5
+        <= sum_max_diff
     )
 
     # Set an objective to maximise the difference between the correct and the wrong label
@@ -208,5 +208,5 @@ def build_and_optimise_adversarial_mnist_torch(
 
 def test_mnist_torch():
     scip = build_and_optimise_adversarial_mnist_torch(
-        42, 12, layer_sizes=(10, 10), image_number=10000, test=True
+        data_seed=42, training_seed=42, n_pixel_1d=12, layer_size=10, n_layers=2, test=True
     )
