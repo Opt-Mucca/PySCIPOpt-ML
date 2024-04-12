@@ -114,7 +114,7 @@ class KerasNetworkConstr(BaseNNConstr):
                 activation = config["activation"]
                 if activation not in ("relu", "linear", "sigmoid", "tanh"):
                     raise NoModel(predictor, f"Unsupported activation {activation}")
-                out_features = step.output_shape[-1]
+                out_features = step.units
             elif isinstance(step, keras.layers.ReLU):
                 if step.negative_slope != 0.0:
                     raise NoModel(predictor, "Only handle ReLU layers with negative slope 0.0")
