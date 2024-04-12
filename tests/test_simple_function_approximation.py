@@ -45,6 +45,7 @@ def build_and_optimise_function_approximation_model(
     n_inputs=5,
     n_samples=1000,
     framework="sklearn",
+    formulation="sos",
     layer_size=8,
     training_seed=42,
     data_seed=42,
@@ -152,10 +153,20 @@ def build_and_optimise_function_approximation_model(
     # Now build the SCIP Model and embed the neural networks
     scip, input_vars, output_vars = build_basic_scip_model(n_inputs)
     mlp_cons_1 = add_predictor_constr(
-        scip, reg_1, input_vars, output_vars[0], unique_naming_prefix="reg_1_"
+        scip,
+        reg_1,
+        input_vars,
+        output_vars[0],
+        unique_naming_prefix="reg_1_",
+        formulation=formulation,
     )
     mlp_cons_2 = add_predictor_constr(
-        scip, reg_2, input_vars, output_vars[1], unique_naming_prefix="reg_2_"
+        scip,
+        reg_2,
+        input_vars,
+        output_vars[1],
+        unique_naming_prefix="reg_2_",
+        formulation=formulation,
     )
 
     if not build_only:
@@ -234,17 +245,66 @@ def test_sklearn_mlp_regression():
         n_inputs=5,
         n_samples=1000,
         framework="sklearn",
+        formulation="sos",
+        layer_size=8,
+    )
+
+
+def test_sklearn_mlp_regression_bigm():
+    scip = build_and_optimise_function_approximation_model(
+        data_seed=42,
+        training_seed=42,
+        n_inputs=5,
+        n_samples=1000,
+        framework="sklearn",
+        formulation="bigm",
         layer_size=8,
     )
 
 
 def test_torch_sequential_regression():
     scip = build_and_optimise_function_approximation_model(
-        data_seed=42, training_seed=42, n_inputs=5, n_samples=1000, framework="torch", layer_size=8
+        data_seed=42,
+        training_seed=42,
+        n_inputs=5,
+        n_samples=1000,
+        framework="torch",
+        formulation="sos",
+        layer_size=8,
+    )
+
+
+def test_torch_sequential_regression_bigm():
+    scip = build_and_optimise_function_approximation_model(
+        data_seed=42,
+        training_seed=42,
+        n_inputs=5,
+        n_samples=1000,
+        framework="torch",
+        formulation="bigm",
+        layer_size=8,
     )
 
 
 def test_keras_sequential_regression():
     scip = build_and_optimise_function_approximation_model(
-        data_seed=42, training_seed=42, n_inputs=5, n_samples=1000, framework="keras", layer_size=3
+        data_seed=42,
+        training_seed=42,
+        n_inputs=5,
+        n_samples=1000,
+        framework="keras",
+        formulation="sos",
+        layer_size=3,
+    )
+
+
+def test_keras_sequential_regression_bigm():
+    scip = build_and_optimise_function_approximation_model(
+        data_seed=42,
+        training_seed=42,
+        n_inputs=5,
+        n_samples=1000,
+        framework="keras",
+        formulation="bigm",
+        layer_size=3,
     )
