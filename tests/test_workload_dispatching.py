@@ -84,7 +84,7 @@ def get_neighbours(k, n, m):
     return sorted(list(neighbours)), sorted(list(not_neighbours))
 
 
-def build_and_optimise(
+def build_and_optimise_workload_dispatching(
     num_layers_or_estimators=4,
     layer_size_or_depth=3,
     nn_or_gbdt="gbdt",
@@ -173,8 +173,12 @@ def build_and_optimise(
 
 
 def test_gbdt_workload_dispatching():
-    build_and_optimise(nn_or_gbdt="gbdt", num_layers_or_estimators=4, layer_size_or_depth=2)
+    build_and_optimise_workload_dispatching(
+        nn_or_gbdt="gbdt", num_layers_or_estimators=4, layer_size_or_depth=2
+    )
 
 
 def test_nn_workload_dispatching():
-    build_and_optimise(nn_or_gbdt="nn", num_layers_or_estimators=2, layer_size_or_depth=6)
+    build_and_optimise_workload_dispatching(
+        nn_or_gbdt="nn", num_layers_or_estimators=2, layer_size_or_depth=6
+    )
