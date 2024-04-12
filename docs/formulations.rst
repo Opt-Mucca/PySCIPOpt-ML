@@ -162,6 +162,25 @@ numerically overall w.r.t. the difference between the true output of the predict
 and that which SCIP returns. Therefore we have decided to use SOS1 constraints,
 which will likely be slower on well-scaled neural networks.
 
+An option to use the traditional big-M formulation is provided if one embeds
+the neural network predictor with the argument `formulation=bigm`.
+Warning: When using this formulation, the user must provide appropriate input bounds.
+The formulation for the big-M model introduces binary variables
+:math:`z \in \{0,1\}^{n}`, and performs a propagation routine to obtain
+lower and upper bound of the output neurons denoted by :math:`L, U \in \mathbb{R}^{n}`.
+The formulation of the layer is given by:
+
+.. math::
+
+    y_j \geq 0
+
+    y_j \geq \sum_{i=1}^n \beta_{i,j} x_i + \beta_{0,j} \quad &\forall j
+
+    y_j \leq \sum_{i=1}^n \beta_{i,j} x_i + \beta_{0,j}  - (1 - z_j) L_j \quad &\forall j
+
+    y_j \leq z_j U_j \quad &\forall j
+
+
 For dense layers with a Sigmoid activation function the formulation is:
 
 .. math::
