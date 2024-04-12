@@ -24,6 +24,13 @@ class AbstractNNLayer(AbstractPredictorConstr):
         **kwargs,
     ):
         self.activation = activation
+        if "formulation" in kwargs:
+            if kwargs["formulation"] not in ["sos", "bigm"]:
+                formulation = kwargs["formulation"]
+                raise ParameterError(f"Formulation type {formulation} is neither sos nor bigm")
+            self.formulation = kwargs["formulation"]
+        else:
+            self.formulation = "sos"
         AbstractPredictorConstr.__init__(
             self, scip_model, input_vars, output_vars, unique_naming_prefix, **kwargs
         )
@@ -31,6 +38,55 @@ class AbstractNNLayer(AbstractPredictorConstr):
     def get_error(self, eps=None):
         # We can't compute externally the error of a layer
         raise AssertionError("Cannot compute the error of an individual layer")
+
+    def _layer_mip_model(self, activation_only=True, **kwargs):
+        """Add the layer to model."""
+        if self.activation == "relu":
+            if self.formulation == "sos":
+                slack = create_vars(
+                    self.scip_model,
+                    (self.input.shape[0], self.output.shape[-1]),
+                    vtype="C",
+                    lb=0.0,
+                    ub=None,
+                    name_prefix=self.unique_naming_prefix + "slack",
+                )
+                relu_cons = add_relu_activation_constraint_layer(
+                    self, slack, activation_only=activation_only
+                )
+                self._created_vars.append(slack)
+            else:
+                activation_vars = create_vars(
+                    self.scip_model,
+                    (self.input.shape[0], self.output.shape[-1]),
+                    vtype="B",
+                    lb=0,
+                    ub=1,
+                    name_prefix=self.unique_naming_prefix + "relu_act",
+                )
+                relu_cons = add_relu_activation_constraint_layer(
+                    self, activation_vars, activation_only=activation_only, formulation="bigm"
+                )
+                self._created_vars.append(activation_vars)
+            for cons in relu_cons:
+                self._created_cons.append(cons)
+        elif self.activation == "logistic" or self.activation == "sigmoid":
+            sigmoid_cons = add_sigmoid_activation_constraint_layer(
+                self, activation_only=activation_only
+            )
+            self._created_cons.append(sigmoid_cons)
+        elif self.activation == "tanh":
+            tanh_cons = add_tanh_activation_constraint_layer(self, activation_only=activation_only)
+            self._created_cons.append(tanh_cons)
+        elif self.activation == "identity" and not activation_only:
+            max_bound = self.scip_model.infinity() if self.formulation == "bigm" else 10**5
+            affine_cons = add_identity_activation_constraint_layer(self, max_bound)
+            self._created_vars.append(affine_cons)
+        else:
+            if activation_only:
+                raise ParameterError(f"Activation layer of type {self.activation} shouldn't exist")
+            else:
+                raise ParameterError(f"Dense layer of type {self.activation} shouldn't exist")
 
 
 class ActivationLayer(AbstractNNLayer):
@@ -65,30 +121,7 @@ class ActivationLayer(AbstractNNLayer):
         return output_vars
 
     def _mip_model(self, **kwargs):
-        """Add the layer to model."""
-        if self.activation == "relu":
-            slack = create_vars(
-                self.scip_model,
-                (self.input.shape[0], self.output.shape[-1]),
-                vtype="C",
-                lb=0.0,
-                ub=None,
-                name_prefix=self.unique_naming_prefix + "slack",
-            )
-            affine_slack_cons, sos_cons = add_relu_activation_constraint_layer(
-                self, slack, activation_only=True
-            )
-            self._created_vars.append(slack)
-            self._created_cons.append(affine_slack_cons)
-            self._created_cons.append(sos_cons)
-        elif self.activation == "logistic" or self.activation == "sigmoid":
-            sigmoid_cons = add_sigmoid_activation_constraint_layer(self, activation_only=True)
-            self._created_cons.append(sigmoid_cons)
-        elif self.activation == "tanh":
-            tanh_cons = add_tanh_activation_constraint_layer(self, activation_only=True)
-            self._created_cons.append(tanh_cons)
-        else:
-            raise ParameterError(f"Activation layer of type {self.activation} shouldn't exist")
+        self._layer_mip_model(activation_only=True, **kwargs)
 
 
 class DenseLayer(AbstractNNLayer):
@@ -127,30 +160,4 @@ class DenseLayer(AbstractNNLayer):
         return output_vars
 
     def _mip_model(self, **kwargs):
-        """Add the layer to model."""
-        if self.activation == "relu":
-            slack = create_vars(
-                self.scip_model,
-                (self.input.shape[0], self.output.shape[-1]),
-                vtype="C",
-                lb=0.0,
-                ub=None,
-                name_prefix=self.unique_naming_prefix + "slack",
-            )
-            affine_slack_cons, sos_cons = add_relu_activation_constraint_layer(
-                self, slack, activation_only=False
-            )
-            self._created_vars.append(slack)
-            self._created_cons.append(affine_slack_cons)
-            self._created_cons.append(sos_cons)
-        elif self.activation == "logistic" or self.activation == "sigmoid":
-            sigmoid_cons = add_sigmoid_activation_constraint_layer(self, activation_only=False)
-            self._created_cons.append(sigmoid_cons)
-        elif self.activation == "tanh":
-            tanh_cons = add_tanh_activation_constraint_layer(self, activation_only=False)
-            self._created_cons.append(tanh_cons)
-        elif self.activation == "identity":
-            affine_cons = add_identity_activation_constraint_layer(self)
-            self._created_vars.append(affine_cons)
-        else:
-            raise ParameterError(f"Activation layer of type {self.activation} shouldn't exist")
+        self._layer_mip_model(activation_only=False, **kwargs)

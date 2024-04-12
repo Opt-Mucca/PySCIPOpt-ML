@@ -4,7 +4,7 @@ import numpy as np
 from pyscipopt import exp, quicksum
 
 
-def add_identity_activation_constraint_layer(layer):
+def add_identity_activation_constraint_layer(layer, max_bound):
     """
     MIP model for identity activation on a layer
 
@@ -12,6 +12,9 @@ def add_identity_activation_constraint_layer(layer):
     ----------
     layer : AbstractNNLayer
         Layer to which activation is applied.
+
+    max_bound : float or int
+        The maximum bound for which propagation values will be stored
 
     Returns
     -------
@@ -28,7 +31,7 @@ def add_identity_activation_constraint_layer(layer):
 
     # Perform some basic activity based bound propagation
     propagation_success, lbs, ubs = propagate_identity_bounds(
-        layer, n_samples, n_nodes_left, n_nodes_right, False
+        layer, n_samples, n_nodes_left, n_nodes_right, False, max_bound
     )
 
     for i in range(n_samples):
@@ -41,17 +44,17 @@ def add_identity_activation_constraint_layer(layer):
             affine_cons[i][j] = layer.scip_model.addCons(layer.output[i][j] == rhs, name=name)
             # Propagate bounds
             if propagation_success:
-                if abs(lbs[i][j]) < 10**5:
+                if abs(lbs[i][j]) < max_bound:
                     output_lb = layer.output[i][j].getLbOriginal()
                     layer.scip_model.chgVarLb(layer.output[i][j], max(lbs[i][j], output_lb))
-                if abs(ubs[i][j]) < 10**5:
+                if abs(ubs[i][j]) < max_bound:
                     output_ub = layer.output[i][j].getUbOriginal()
                     layer.scip_model.chgVarUb(layer.output[i][j], min(ubs[i][j], output_ub))
 
     return affine_cons
 
 
-def add_relu_activation_constraint_layer(layer, slack, activation_only=True):
+def add_relu_activation_constraint_layer(layer, aux_vars, activation_only=True, formulation="sos"):
     """
     MIP model for ReLU activation on a layer
 
@@ -60,20 +63,21 @@ def add_relu_activation_constraint_layer(layer, slack, activation_only=True):
     layer : AbstractNNLayer
         Layer to which activation is applied.
 
-    slack : np.ndarray
-        Slack variables that will be used in the SOS formulation
+    aux_vars : np.ndarray
+        Auxiliary variables that are used for the formulation. These are slack variables for the SOS formulation
+        and binary activation variables for the Big-M formulation
 
     activation_only : bool, optional
         Whether this layer should only feature as an activation layer, i.e., skip the affine transformation
 
+    formulation : str, optional
+        The MIP formulation used for encoding the ReLU activation. Options are ["sos", "bigm"]
+
     Returns
     -------
 
-    cons_with_slack : np.ndarray
-        A numpy array containing added constraints
-
-    sos_cons : np.ndarray
-        A numpy array containing added constraints
+    relu_cons : list
+        A list of numpy arrays containing added constraints
 
     """
 
@@ -83,48 +87,81 @@ def add_relu_activation_constraint_layer(layer, slack, activation_only=True):
     n_nodes_right = layer.output.shape[-1]
     sos_cons = np.zeros((n_samples, n_nodes_right), dtype=object)
     cons_with_slack = np.zeros((n_samples, n_nodes_right), dtype=object)
+    big_m_lb = np.zeros((n_samples, n_nodes_right), dtype=object)
+    big_m_ub_inactive = np.zeros((n_samples, n_nodes_right), dtype=object)
+    big_m_ub_active = np.zeros((n_samples, n_nodes_right), dtype=object)
 
     # Perform some basic activity based bound propagation
+    max_bound = 10**5 if formulation == "sos" else np.inf
     propagation_success, lbs, ubs = propagate_identity_bounds(
-        layer, n_samples, n_nodes_left, n_nodes_right, activation_only
+        layer, n_samples, n_nodes_left, n_nodes_right, activation_only, layer.scip_model.infinity()
     )
 
     # Iterate over all nodes on the right hand side and create the appropriate constraints
     for i in range(n_samples):
         for j in range(n_nodes_right):
-            if layer.output[i][j].getLbOriginal() < 0:
-                layer.scip_model.chgVarLb(layer.output[i][j], 0)
-            name = layer.unique_naming_prefix + f"slack_{i}_{j}"
-            if activation_only:
-                cons_with_slack[i][j] = layer.scip_model.addCons(
-                    layer.output[i][j] == layer.input[i][j] + slack[i][j], name=name
-                )
-            else:
-                rhs = quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left))
-                rhs += layer.intercept[j] + slack[i][j]
-                cons_with_slack[i][j] = layer.scip_model.addCons(
-                    layer.output[i][j] == rhs, name=name
-                )
             # Propagate bounds
             if propagation_success:
-                if abs(lbs[i][j]) < 10**5:
+                if abs(lbs[i][j]) < max_bound:
                     output_lb = layer.output[i][j].getLbOriginal()
                     layer.scip_model.chgVarLb(
                         layer.output[i][j], max(max(lbs[i][j], 0), output_lb)
                     )
-                    layer.scip_model.chgVarUb(slack[i][j], max(-lbs[i][j], 0))
-                if abs(ubs[i][j]) < 10**5:
+                    if formulation == "sos":
+                        layer.scip_model.chgVarUb(aux_vars[i][j], max(-lbs[i][j], 0))
+                if abs(ubs[i][j]) < max_bound:
                     output_ub = layer.output[i][j].getUbOriginal()
                     layer.scip_model.chgVarUb(
                         layer.output[i][j], min(max(ubs[i][j], 0), output_ub)
                     )
-                    layer.scip_model.chgVarLb(slack[i][j], max(-ubs[i][j], 0))
-            name = layer.unique_naming_prefix + f"sos_{i}_{j}"
-            sos_cons[i][j] = layer.scip_model.addConsSOS1(
-                [layer.output[i][j], slack[i][j]], name=name
-            )
+                    if formulation == "sos":
+                        layer.scip_model.chgVarLb(aux_vars[i][j], max(-ubs[i][j], 0))
+            # Create layer constraints
+            if layer.output[i][j].getLbOriginal() < 0:
+                layer.scip_model.chgVarLb(layer.output[i][j], 0)
+            if formulation == "sos":
+                name = layer.unique_naming_prefix + f"slack_{i}_{j}"
+                if activation_only:
+                    cons_with_slack[i][j] = layer.scip_model.addCons(
+                        layer.output[i][j] == layer.input[i][j] + aux_vars[i][j], name=name
+                    )
+                else:
+                    rhs = quicksum(
+                        layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left)
+                    )
+                    rhs += layer.intercept[j] + aux_vars[i][j]
+                    cons_with_slack[i][j] = layer.scip_model.addCons(
+                        layer.output[i][j] == rhs, name=name
+                    )
+                name = layer.unique_naming_prefix + f"sos_{i}_{j}"
+                sos_cons[i][j] = layer.scip_model.addConsSOS1(
+                    [layer.output[i][j], aux_vars[i][j]], name=name
+                )
+            else:
+                if activation_only:
+                    rhs = layer.input[i][j]
+                else:
+                    rhs = (
+                        quicksum(
+                            layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left)
+                        )
+                        + layer.intercept[j]
+                    )
+                name = layer.unique_naming_prefix + f"relu_lb_{i}_{j}"
+                big_m_lb[i][j] = layer.scip_model.addCons(layer.output[i][j] >= rhs, name=name)
+                name = layer.unique_naming_prefix + f"relu_ub_inactive_{i}_{j}"
+                big_m_ub_inactive[i][j] = layer.scip_model.addCons(
+                    layer.output[i][j] <= rhs - (1 - aux_vars[i][j]) * lbs[i][j], name=name
+                )
+                name = layer.unique_naming_prefix + f"relu_ub_active_{i}_{j}"
+                big_m_ub_active[i][j] = layer.scip_model.addCons(
+                    layer.output[i][j] <= aux_vars[i][j] * ubs[i][j], name=name
+                )
 
-    return cons_with_slack, sos_cons
+    if formulation == "bigm":
+        return [big_m_lb, big_m_ub_inactive, big_m_ub_active]
+    else:
+        return [cons_with_slack, sos_cons]
 
 
 def add_sigmoid_activation_constraint_layer(layer, activation_only=True):
@@ -223,7 +260,9 @@ def add_tanh_activation_constraint_layer(layer, activation_only=True):
     return tanh_cons
 
 
-def propagate_identity_bounds(layer, n_samples, n_nodes_left, n_nodes_right, activation_only):
+def propagate_identity_bounds(
+    layer, n_samples, n_nodes_left, n_nodes_right, activation_only, max_bound
+):
     """
     Activity based bound propagation. Assume the worst case bound for each node individually and generate
     bounds for the next layer.
@@ -240,6 +279,8 @@ def propagate_identity_bounds(layer, n_samples, n_nodes_left, n_nodes_right, act
         The number of nodes on the right (output) layer
     activation_only : bool
         Whether the bounds are going to be used for an activation only layer. In this case no weighted sum is needed.
+    max_bound : float or int
+        The maximum absolute bound value for a variable before bound propagation termination
 
     Returns
     -------
@@ -269,8 +310,8 @@ def propagate_identity_bounds(layer, n_samples, n_nodes_left, n_nodes_right, act
     if activation_only:
         return True, input_lbs, input_ubs
 
-    # Skip propagation for the weighted sum if some bounds are larger than 10**5
-    if np.max(input_ubs) > 10**5 or np.min(input_lbs) < -1 * 10**5:
+    # Skip propagation for the weighted sum if some bounds are larger than max_bound
+    if np.max(np.abs(input_ubs)) + np.max(np.abs(input_lbs)) > max_bound:
         return False, ubs, lbs
 
     for i in range(n_samples):

@@ -55,6 +55,7 @@ def build_and_optimise_adversarial_mnist_torch(
     layer_size=16,
     n_layers=2,
     test=True,
+    formulation="sos",
     build_only=False,
 ):
     # Set random seed for reproducibility and select the image that is going to be perturbed
@@ -192,7 +193,12 @@ def build_and_optimise_adversarial_mnist_torch(
 
     # Add the ML constraint
     pred_cons = add_predictor_constr(
-        scip, reg, input_vars, output_vars, unique_naming_prefix="adversarial_"
+        scip,
+        reg,
+        input_vars,
+        output_vars,
+        unique_naming_prefix="adversarial_",
+        formulation=formulation,
     )
 
     if not build_only:
@@ -208,5 +214,23 @@ def build_and_optimise_adversarial_mnist_torch(
 
 def test_mnist_torch():
     scip = build_and_optimise_adversarial_mnist_torch(
-        data_seed=42, training_seed=42, n_pixel_1d=12, layer_size=10, n_layers=2, test=True
+        data_seed=42,
+        training_seed=42,
+        n_pixel_1d=12,
+        layer_size=10,
+        n_layers=2,
+        test=True,
+        formulation="sos",
+    )
+
+
+def test_mnist_torch_bigm():
+    scip = build_and_optimise_adversarial_mnist_torch(
+        data_seed=42,
+        training_seed=42,
+        n_pixel_1d=12,
+        layer_size=10,
+        n_layers=2,
+        test=True,
+        formulation="bigm",
     )
