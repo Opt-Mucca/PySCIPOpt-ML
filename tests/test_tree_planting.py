@@ -48,12 +48,12 @@ Let f be the ML predictor for the survival of tree t at grid point i,j with soil
 The MIP model is:
 
 sum_t p[i][j][t] = 1 for all i,j
-sum_{i,j} s[i][j][t] >= min_survive[t] forall t
+sum_{i,j} s'[i][j][t] >= min_survive[t] forall t
 sum_t (sum_{i,j} p[i][j][t] * cost[t]) <= budget
 sum_{i,j} x[i][j][sterilisation_idx] <= sterilisation_budget
 s[i][j][t] = f(x[i][j][:])
 p[i][j][t] = 1 => s'[i][j][t] <= s[i][j][t] forall i,j,t
-p[i][j][t] = 0 => x'[i][j][t] <= 0
+p[i][j][t] = 0 => s'[i][j][t] <= 0
 
 max(sum_{i,j,t} s'[i][j][t])
 """
@@ -67,7 +67,7 @@ def build_and_optimise_tree_planting(
     n_estimators_layers=2,
     layer_size=8,
     n_grid_size=10,
-    min_trees=(2, 2, 2, 2),
+    min_trees=(1.7, 1.7, 1.7, 1.7),
     build_only=False,
 ):
     assert predictor_type in ("linear", "decision_tree", "gbdt", "mlp")
@@ -75,7 +75,7 @@ def build_and_optimise_tree_planting(
     data_random_state = np.random.RandomState(data_seed)
     max_sterilise = data_random_state.randint(low=8, high=13)
     costs = data_random_state.uniform(low=25, high=45, size=4)
-    max_budget = (n_grid_size**2) * np.median(costs)
+    max_budget = (n_grid_size**2) * np.median(costs) * 1.1
     # Read the csv data
     data_dict = read_csv_to_dict("./tests/data/tree_survivability.csv")
 
@@ -150,7 +150,7 @@ def build_and_optimise_tree_planting(
                     vtype="B", name=f"plant_tree_{i}_{j}_{k}"
                 )
                 tree_survive_vars[i][j][k] = scip.addVar(
-                    vtype="C", lb=-1, ub=1, name=f"survive_tree_{i}_{j}_{k}"
+                    vtype="C", lb=-10, ub=10, name=f"survive_tree_{i}_{j}_{k}"
                 )
                 tree_adjusted_survive_vars[i][j][k] = scip.addVar(
                     vtype="C", lb=-1, ub=1, name=f"adjusted_survive_tree_{i}_{j}_{k}"
@@ -168,7 +168,7 @@ def build_and_optimise_tree_planting(
     for k in range(4):
         scip.addCons(
             quicksum(
-                quicksum(tree_survive_vars[i][j][k] for j in range(n_grid_size))
+                quicksum(tree_adjusted_survive_vars[i][j][k] for j in range(n_grid_size))
                 for i in range(n_grid_size)
             )
             >= min_trees[k],
@@ -201,7 +201,7 @@ def build_and_optimise_tree_planting(
                     tree_adjusted_survive_vars[i][j][k] <= 0,
                     tree_planting_vars[i][j][k],
                     activeone=False,
-                    name=f"tree_survive_ind_{i}_{j}_{k}_1",
+                    name=f"tree_survive_ind_{i}_{j}_{k}_2",
                 )
 
     # Create feature variables
@@ -215,7 +215,7 @@ def build_and_optimise_tree_planting(
             for k in range(7):
                 if k == 0:
                     feature_variables[i][j][k] = scip.addVar(
-                        vtype="C", lb=0, ub=1, name=f"feature_{i}_{j}_{k}"
+                        vtype="C", lb=min_light, ub=max_light, name=f"feature_{i}_{j}_{k}"
                     )
                     scip.fixVar(feature_variables[i][j][k], light_isf)
                 else:
