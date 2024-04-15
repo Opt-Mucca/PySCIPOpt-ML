@@ -164,10 +164,13 @@ def build_and_optimise_water_potability(
 
     for i in range(n_water_samples):
         for j, feature in enumerate(features):
+            lb = X[undrinkable_water_indices[i]][j] - remove_feature_budgets[j]
+            ub = X[undrinkable_water_indices[i]][j] + remove_feature_budgets[j]
+            if lb >= 0:
+                scip.chgVarLb(feature_vars[i][j], lb)
+            scip.chgVarUb(feature_vars[i][j], ub)
             scip.addCons(
-                data_dict[feature][undrinkable_water_indices[i]]
-                - features_removed[i][j]
-                + features_added[i][j]
+                X[undrinkable_water_indices[i]][j] - features_removed[i][j] + features_added[i][j]
                 == feature_vars[i][j],
                 name=f"change_{i}_{j}",
             )
