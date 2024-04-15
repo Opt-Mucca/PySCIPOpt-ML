@@ -150,10 +150,10 @@ def build_and_optimise_tree_planting(
                     vtype="B", name=f"plant_tree_{i}_{j}_{k}"
                 )
                 tree_survive_vars[i][j][k] = scip.addVar(
-                    vtype="C", ub=1, name=f"survive_tree_{i}_{j}_{k}"
+                    vtype="C", lb=-1, ub=1, name=f"survive_tree_{i}_{j}_{k}"
                 )
                 tree_adjusted_survive_vars[i][j][k] = scip.addVar(
-                    vtype="C", ub=1, name=f"adjusted_survive_tree_{i}_{j}_{k}"
+                    vtype="C", lb=-1, ub=1, name=f"adjusted_survive_tree_{i}_{j}_{k}"
                 )
 
     # Ensure that only a single tree is planted in a single grid point

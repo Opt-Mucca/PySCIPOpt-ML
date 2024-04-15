@@ -72,13 +72,12 @@ trained ML predictors.
         scip = Model()
 
         # Create the input variables
-        input_vars = np.zeros((2, n_inputs), dtype=object)
-        for i in range(2):
-            for j in range(n_inputs):
-                # Tight bounds are important for MIP formulations of neural networks. They often drastically improve
-                # performance. As our training data is in the range [-10, 10], we pass that as bounds [-10, 10].
-                # These bounds will then propagate to other variables.
-                input_vars[i][j] = scip.addVar(name=f"x_{i}_{j}", vtype="C", lb=-10, ub=10)
+        input_vars = np.zeros((1, n_inputs), dtype=object)
+        for i in range(n_inputs):
+            # Tight bounds are important for MIP formulations of neural networks. They often drastically improve
+            # performance. As our training data is in the range [-10, 10], we pass that as bounds [-10, 10].
+            # These bounds will then propagate to other variables.
+            input_vars[0][i] = scip.addVar(name=f"x_{i}", vtype="C", lb=-10, ub=10)
 
         # Create the output variables. (Note that these variables will be automatically constructed if not specified)
         output_vars = np.zeros((2, 1), dtype=object)
@@ -182,10 +181,10 @@ or a PyTorch fully connected Sequential model with ReLU activation functions.
         # Now build the SCIP Model and embed the neural networks
         scip, input_vars, output_vars = build_basic_scip_model(n_inputs)
         mlp_cons_1 = add_predictor_constr(
-            scip, reg_1, input_vars[0], output_vars[0], unique_naming_prefix="reg_1_"
+            scip, reg_1, input_vars, output_vars[0], unique_naming_prefix="reg_1_"
         )
         mlp_cons_2 = add_predictor_constr(
-            scip, reg_2, input_vars[1], output_vars[1], unique_naming_prefix="reg_2_"
+            scip, reg_2, input_vars, output_vars[1], unique_naming_prefix="reg_2_"
         )
 
         return scip
