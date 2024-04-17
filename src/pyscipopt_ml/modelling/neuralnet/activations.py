@@ -1,5 +1,4 @@
 """Internal module to make MIP modeling of activation functions."""
-
 import numpy as np
 from pyscipopt import exp, quicksum
 
@@ -114,8 +113,6 @@ def add_relu_activation_constraint_layer(layer, aux_vars, activation_only=True, 
                     layer.scip_model.chgVarUb(
                         layer.output[i][j], min(max(ubs[i][j], 0), output_ub)
                     )
-                    if formulation == "sos":
-                        layer.scip_model.chgVarLb(aux_vars[i][j], max(-ubs[i][j], 0))
             # Create layer constraints
             if layer.output[i][j].getLbOriginal() < 0:
                 layer.scip_model.chgVarLb(layer.output[i][j], 0)
