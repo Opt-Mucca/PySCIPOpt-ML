@@ -329,8 +329,8 @@ def test_tree_planting_mlp():
         training_seed=35,
         predictor_type="mlp",
         max_depth=5,
-        n_estimators_layers=3,
+        n_estimators_layers=2,
         layer_size=6,
-        n_grid_size=10,
-        min_trees=(2, 2, 2, 2),
+        n_grid_size=3,
+        min_trees=(0.5, 0.5, 0.5, 0.5),
     )

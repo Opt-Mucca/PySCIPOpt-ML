@@ -113,6 +113,8 @@ def add_relu_activation_constraint_layer(layer, aux_vars, activation_only=True, 
                     layer.scip_model.chgVarUb(
                         layer.output[i][j], min(max(ubs[i][j], 0), output_ub)
                     )
+                    if formulation == "sos":
+                        layer.scip_model.chgVarLb(aux_vars[i][j], max(-ubs[i][j], 0))
             # Create layer constraints
             if layer.output[i][j].getLbOriginal() < 0:
                 layer.scip_model.chgVarLb(layer.output[i][j], 0)
@@ -318,12 +320,12 @@ def propagate_identity_bounds(
             for k in range(n_nodes_left):
                 coefficient = layer.coefs[k][j]
                 if coefficient > 0:
-                    ub += input_ubs[i][k] * coefficient
-                    lb += input_lbs[i][k] * coefficient
+                    ub += input_ubs[i][k] * coefficient + 10**-6
+                    lb += input_lbs[i][k] * coefficient - 10**-6
                 elif coefficient < 0:
-                    ub += input_lbs[i][k] * coefficient
-                    lb += input_ubs[i][k] * coefficient
-            ubs[i][j] = ub + layer.intercept[j]
-            lbs[i][j] = lb + layer.intercept[j]
+                    ub += input_lbs[i][k] * coefficient + 10**-6
+                    lb += input_ubs[i][k] * coefficient - 10**-6
+            ubs[i][j] = ub + layer.intercept[j] + 10**-6
+            lbs[i][j] = lb + layer.intercept[j] - 10**-6
 
     return True, lbs, ubs
