@@ -45,6 +45,7 @@ def build_and_optimise_water_potability(
     data_seed=42,
     training_seed=42,
     predictor_type="mlp",
+    formulation="sos",
     n_water_samples=50,
     layer_size=16,
     max_depth=5,
@@ -165,7 +166,7 @@ def build_and_optimise_water_potability(
     for i in range(n_water_samples):
         for j, feature in enumerate(features):
             lb = X[undrinkable_water_indices[i]][j] - remove_feature_budgets[j]
-            ub = X[undrinkable_water_indices[i]][j] + remove_feature_budgets[j]
+            ub = X[undrinkable_water_indices[i]][j] + add_feature_budgets[j]
             if lb >= 0:
                 scip.chgVarLb(feature_vars[i][j], lb)
             scip.chgVarUb(feature_vars[i][j], ub)
@@ -195,6 +196,7 @@ def build_and_optimise_water_potability(
             drinkable_water,
             unique_naming_prefix=f"clf_",
             epsilon=0.0001,
+            formulation=formulation,
         )
     else:
         pred_cons = add_predictor_constr(
@@ -204,6 +206,7 @@ def build_and_optimise_water_potability(
             drinkable_water,
             unique_naming_prefix=f"clf_",
             output_type="classification",
+            formulation=formulation,
         )
 
     # Set the object to maximise the amount of drinkable water after treatment
@@ -238,11 +241,41 @@ def test_water_potability_sklearn_mlp():
     )
 
 
+def test_water_potability_sklearn_mlp_bigm():
+    scip = build_and_optimise_water_potability(
+        data_seed=42,
+        training_seed=42,
+        predictor_type="mlp",
+        formulation="bigm",
+        n_water_samples=50,
+        layer_size=16,
+        max_depth=5,
+        n_estimators_layers=2,
+        framework="sklearn",
+        build_only=False,
+    )
+
+
 def test_water_potability_keras():
     scip = build_and_optimise_water_potability(
         data_seed=20,
         training_seed=20,
         predictor_type="mlp",
+        n_water_samples=50,
+        layer_size=16,
+        max_depth=5,
+        n_estimators_layers=2,
+        framework="keras",
+        build_only=False,
+    )
+
+
+def test_water_potability_keras_bigm():
+    scip = build_and_optimise_water_potability(
+        data_seed=20,
+        training_seed=20,
+        predictor_type="mlp",
+        formulation="bigm",
         n_water_samples=50,
         layer_size=16,
         max_depth=5,

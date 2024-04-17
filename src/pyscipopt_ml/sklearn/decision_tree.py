@@ -151,10 +151,6 @@ class DecisionTreeConstr(SKgetter, AbstractPredictorConstr):
             self.output_size = predictor.n_outputs_
         SKgetter.__init__(self, predictor, **kwargs)
 
-        formulations = "leafs"
-        if formulation not in formulations:
-            raise ValueError(f"Wrong value for formulation should be one of {formulations}.")
-        self._formulation = formulation
         AbstractPredictorConstr.__init__(
             self, scip_model, input_vars, output_vars, unique_naming_prefix, **kwargs
         )

@@ -88,6 +88,7 @@ def build_and_optimise_workload_dispatching(
     num_layers_or_estimators=4,
     layer_size_or_depth=3,
     nn_or_gbdt="gbdt",
+    formulation="sos",
     training_seed=42,
     data_seed=42,
     build_only=False,
@@ -138,7 +139,14 @@ def build_and_optimise_workload_dispatching(
             )
         reg.fit(x, y)
         pred_input = [avg_cpi_vars[i], avg_neighbour_cpi_vars[i], avg_far_cpi_vars[i]]
-        pred_cons = add_predictor_constr(scip, reg, pred_input, [efficiency_vars[i]])
+        pred_cons = add_predictor_constr(
+            scip,
+            reg,
+            pred_input,
+            [efficiency_vars[i]],
+            unique_naming_prefix=f"p_{i}_",
+            formulation=formulation,
+        )
         predictor_constraints.append(pred_cons)
 
     # Randomly generate an instance and create the appropriate constraints
@@ -180,5 +188,11 @@ def test_gbdt_workload_dispatching():
 
 def test_nn_workload_dispatching():
     build_and_optimise_workload_dispatching(
-        nn_or_gbdt="nn", num_layers_or_estimators=2, layer_size_or_depth=6
+        nn_or_gbdt="nn", num_layers_or_estimators=2, layer_size_or_depth=3
+    )
+
+
+def test_nn_workload_dispatching_bigm():
+    build_and_optimise_workload_dispatching(
+        nn_or_gbdt="nn", num_layers_or_estimators=2, layer_size_or_depth=3, formulation="bigm"
     )

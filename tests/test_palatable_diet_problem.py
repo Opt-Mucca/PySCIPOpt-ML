@@ -66,6 +66,7 @@ f(x) >= t
 
 def build_and_optimise_palatable_diet(
     mlp_gbdt_svm="mlp",
+    formulation="sos",
     n_estimators_or_layers=2,
     layer_sizes_or_depth=16,
     degree=2,
@@ -139,17 +140,21 @@ def build_and_optimise_palatable_diet(
     # Fix salt and sugar as they are always constant in the training data
     scip.addCons(input_vars[0][9] == 0.05, name="salt_const")
     scip.addCons(input_vars[0][20] == 0.2, name="sugar_const")
+
     # Set the objective to minimise costs
     scip.setObjective(sum(cost_p[i] * input_vars[0][i] for i in range(n_food)), sense="minimize")
+
     # Insert the ML predictor
-    if mlp_gbdt_svm == "gbdt":
-        pred_cons = add_predictor_constr(
-            scip, reg, input_vars, output_vars, unique_naming_prefix="reg_", epsilon=0.001
-        )
-    else:
-        pred_cons = add_predictor_constr(
-            scip, reg, input_vars, output_vars, unique_naming_prefix="reg_"
-        )
+    pred_cons = add_predictor_constr(
+        scip,
+        reg,
+        input_vars,
+        output_vars,
+        unique_naming_prefix="reg_",
+        epsilon=0.001,
+        formulation=formulation,
+    )
+
     # Add a minimum palatable constraint
     min_palatable = data_random_state.uniform(low=0.48, high=0.52)
     scip.addCons(output_vars[0][0] >= min_palatable, name="palatable")
@@ -171,6 +176,12 @@ def test_svm_palatable_diet():
 def test_nn_palatable_diet():
     build_and_optimise_palatable_diet(
         mlp_gbdt_svm="mlp", n_estimators_or_layers=2, layer_sizes_or_depth=16
+    )
+
+
+def test_nn_palatable_diet_bigm():
+    build_and_optimise_palatable_diet(
+        mlp_gbdt_svm="mlp", n_estimators_or_layers=2, layer_sizes_or_depth=16, formulation="bigm"
     )
 
 

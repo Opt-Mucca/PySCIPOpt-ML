@@ -63,6 +63,7 @@ def build_and_optimise_tree_planting(
     data_seed=42,
     training_seed=42,
     predictor_type="linear",
+    formulation="sos",
     max_depth=5,
     n_estimators_layers=2,
     layer_size=8,
@@ -256,6 +257,7 @@ def build_and_optimise_tree_planting(
                 tree_survive_vars[:, :, i].reshape(-1, 1),
                 unique_naming_prefix=f"predictor_{i}_",
                 epsilon=0.0001,
+                formulation=formulation,
             )
         )
 
@@ -328,6 +330,20 @@ def test_tree_planting_mlp():
         data_seed=18,
         training_seed=35,
         predictor_type="mlp",
+        max_depth=5,
+        n_estimators_layers=2,
+        layer_size=6,
+        n_grid_size=3,
+        min_trees=(0.5, 0.5, 0.5, 0.5),
+    )
+
+
+def test_tree_planting_mlp_bigm():
+    scip = build_and_optimise_tree_planting(
+        data_seed=18,
+        training_seed=35,
+        predictor_type="mlp",
+        formulation="bigm",
         max_depth=5,
         n_estimators_layers=2,
         layer_size=6,

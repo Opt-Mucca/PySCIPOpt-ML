@@ -59,6 +59,7 @@ def build_and_optimise_auto_manufacturer(
     training_seed=42,
     data_seed=42,
     gbdt_rf_or_mlp="gbdt",
+    formulation="sos",
     max_depth_or_layer_size=6,
     n_estimators_or_layers=6,
     build_only=False,
@@ -228,6 +229,7 @@ def build_and_optimise_auto_manufacturer(
             np.concatenate((feature_vars, price_vars), axis=1),
             amount_sold_vars,
             epsilon=0.0001,
+            formulation=formulation,
             unique_naming_prefix="num_sales_",
         ),
         add_predictor_constr(
@@ -236,6 +238,7 @@ def build_and_optimise_auto_manufacturer(
             feature_vars,
             price_vars,
             epsilon=0.0001,
+            formulation=formulation,
             unique_naming_prefix="price_",
         ),
         add_predictor_constr(
@@ -244,6 +247,7 @@ def build_and_optimise_auto_manufacturer(
             np.concatenate((feature_vars, price_vars), axis=1),
             resale_vars,
             epsilon=0.0001,
+            formulation=formulation,
             unique_naming_prefix="resale_",
         ),
     ]
@@ -295,6 +299,18 @@ def test_mlp_auto_manufacturer():
         training_seed=42,
         data_seed=42,
         gbdt_rf_or_mlp="mlp",
+        max_depth_or_layer_size=6,
+        n_estimators_or_layers=2,
+        build_only=False,
+    )
+
+
+def test_mlp_auto_manufacturer_bigm():
+    scip = build_and_optimise_auto_manufacturer(
+        training_seed=42,
+        data_seed=42,
+        gbdt_rf_or_mlp="mlp",
+        formulation="bigm",
         max_depth_or_layer_size=6,
         n_estimators_or_layers=2,
         build_only=False,

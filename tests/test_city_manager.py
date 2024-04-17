@@ -69,6 +69,7 @@ def build_and_optimise_city_manager(
     data_seed=42,
     training_seed=42,
     dt_gbdt_or_mlp="dt",
+    formulation="sos",
     max_depth_or_layer_size=6,
     n_estimators_layers=3,
     n_apartments=50,
@@ -176,7 +177,7 @@ def build_and_optimise_city_manager(
 
     # Now fill in the actual variables
     for i in range(n_apartments):
-        price_vars[i][0] = scip.addVar(vtype="C", lb=0, name=f"price_{i}")
+        price_vars[i][0] = scip.addVar(vtype="C", lb=0, ub=50, name=f"price_{i}")
         for j, feature in enumerate(features):
             feature_vars[i][j] = scip.addVar(vtype="C", lb=0, name=f"feature_{i}_{j}")
             # Randomly generate characteristics
@@ -184,7 +185,7 @@ def build_and_optimise_city_manager(
                 scip.fixVar(feature_vars[i][j], int(np.random.randint(0, 2)))
             elif feature == "rooms":
                 scip.fixVar(feature_vars[i][j], int(rooms[i]))
-            elif feature == "floors":
+            elif feature == "floorCount":
                 scip.fixVar(feature_vars[i][j], int(floors[i]))
             elif feature == "squareMeters":
                 scip.fixVar(feature_vars[i][j], int(square_meters[i]))
@@ -197,6 +198,11 @@ def build_and_optimise_city_manager(
                         )
                     ),
                 )
+            elif feature == "squareMeters":
+                scip.chgVarUb(feature_vars[i][j], 200)
+            else:
+                scip.chgVarUb(feature_vars[i][j], 2 * grid_length)
+
     for building_type, _, building_var in building_vars:
         for i in range(building_var.shape[0]):
             building_var[i][0] = scip.addVar(
@@ -347,6 +353,7 @@ def build_and_optimise_city_manager(
         feature_vars,
         price_vars,
         epsilon=epsilon,
+        formulation=formulation,
         unique_naming_prefix=f"predictor_",
     )
 
@@ -386,6 +393,36 @@ def test_gbdt_city_manager():
         max_depth_or_layer_size=4,
         n_estimators_layers=3,
         n_apartments=50,
+        grid_length=5,
+        epsilon=0.001,
+        build_only=False,
+    )
+
+
+def test_mlp_city_manager():
+    build_and_optimise_city_manager(
+        data_seed=50,
+        training_seed=80,
+        dt_gbdt_or_mlp="mlp",
+        formulation="sos",
+        max_depth_or_layer_size=3,
+        n_estimators_layers=2,
+        n_apartments=3,
+        grid_length=5,
+        epsilon=0.001,
+        build_only=False,
+    )
+
+
+def test_mlp_bigm_city_manager():
+    build_and_optimise_city_manager(
+        data_seed=50,
+        training_seed=80,
+        dt_gbdt_or_mlp="mlp",
+        formulation="bigm",
+        max_depth_or_layer_size=3,
+        n_estimators_layers=2,
+        n_apartments=3,
         grid_length=5,
         epsilon=0.001,
         build_only=False,

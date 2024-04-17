@@ -67,6 +67,7 @@ def build_and_optimise_wine_manufacturer(
     n_wines_to_produce=5,
     sklearn_xgboost_lightgbm="sklearn",
     gbdt_rf_or_mlp="rf",
+    formulation="sos",
     n_estimators_layers=3,
     max_depth=3,
     layer_size=16,
@@ -225,7 +226,13 @@ def build_and_optimise_wine_manufacturer(
 
     # Add the ML constraint. Add in a single batch!
     pred_cons = add_predictor_constr(
-        scip, reg, feature_vars, quality_vars, unique_naming_prefix="predictor_", epsilon=epsilon
+        scip,
+        reg,
+        feature_vars,
+        quality_vars,
+        unique_naming_prefix="predictor_",
+        epsilon=epsilon,
+        formulation=formulation,
     )
 
     # Add a constraint ensuring minimum wine quality on those produced
@@ -338,5 +345,20 @@ def test_wine_manufacturer_sklearn_mlp():
         gbdt_rf_or_mlp="mlp",
         max_depth=3,
         n_estimators_layers=3,
-        layer_size=10,
+        layer_size=7,
+    )
+
+
+def test_wine_manufacturer_sklearn_mlp_bigm():
+    scip = build_and_optimise_wine_manufacturer(
+        data_seed=18,
+        training_seed=18,
+        n_vineyards=35,
+        n_wines_to_produce=5,
+        sklearn_xgboost_lightgbm="sklearn",
+        gbdt_rf_or_mlp="mlp",
+        formulation="bigm",
+        max_depth=3,
+        n_estimators_layers=3,
+        layer_size=7,
     )
