@@ -156,7 +156,7 @@ def build_and_optimise_palatable_diet(
     )
 
     # Add a minimum palatable constraint
-    min_palatable = data_random_state.uniform(low=0.48, high=0.52)
+    min_palatable = data_random_state.uniform(low=0.5, high=0.52)
     scip.addCons(output_vars[0][0] >= min_palatable, name="palatable")
 
     # Optimise the model!
