@@ -104,24 +104,24 @@ class AbstractPredictorConstr(ABC):
     def _build_predictor_model(self, **kwargs):
         self._mip_model(**kwargs)
 
-    def _get_created_vars_and_cons(self, created_vars, created_cons):
-        created_vars += self._created_vars
-        created_cons += self._created_cons
+    def _get_created_vars_and_cons(self):
+        created_vars = [c_vars for c_vars in self._created_vars]
+        created_cons = [c_cons for c_cons in self._created_cons]
         if hasattr(self, "_estimators"):
             for estimator in self._estimators:
-                created_vars, created_cons = estimator._get_created_vars_and_cons(
-                    created_vars, created_cons
-                )
+                sub_created_vars, sub_created_cons = estimator._get_created_vars_and_cons()
+                created_vars += sub_created_vars
+                created_cons += sub_created_cons
         if hasattr(self, "_layers"):
             for layer in self._layers:
-                created_vars, created_cons = layer._get_created_vars_and_cons(
-                    created_vars, created_cons
-                )
+                sub_created_vars, sub_created_cons = layer._get_created_vars_and_cons()
+                created_vars += sub_created_vars
+                created_cons += sub_created_cons
         if hasattr(self, "_steps"):
             for step in self._steps:
-                created_vars, created_cons = step._get_created_vars_and_cons(
-                    created_vars, created_cons
-                )
+                sub_created_vars, sub_created_cons = step._get_created_vars_and_cons()
+                created_vars += sub_created_vars
+                created_cons += sub_created_cons
 
         return created_vars, created_cons
 
@@ -143,7 +143,7 @@ class AbstractPredictorConstr(ABC):
         n_linear_cons = 0
         n_nonlinear_cons = 0
 
-        created_vars, created_cons = self._get_created_vars_and_cons([], [])
+        created_vars, created_cons = self._get_created_vars_and_cons()
         for cons_set in created_cons:
             it = np.nditer(cons_set, flags=["multi_index", "refs_ok"])
             for _ in it:
