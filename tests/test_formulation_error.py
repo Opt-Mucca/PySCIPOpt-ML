@@ -87,7 +87,9 @@ def train_embed_and_optimise(predictor, multi_dimension, classification, n_sampl
             predictor.add(keras.layers.Activation(keras.activations.softmax))
         predictor.compile(optimizer="adam", loss="mse")
     if not isinstance(predictor, ClusterMixin):
-        if isinstance(predictor, MultiOutputClassifier):
+        if isinstance(predictor, MultiOutputClassifier) or (
+            isinstance(predictor, keras.Model) and multi_dimension and classification
+        ):
             y = OneHotEncoder(sparse_output=False).fit_transform(y.reshape(-1, 1))
         predictor.fit(X, y)
     else:
