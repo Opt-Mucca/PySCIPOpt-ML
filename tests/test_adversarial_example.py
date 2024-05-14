@@ -86,11 +86,15 @@ def build_and_optimise_adversarial_mnist_torch(
 
     # Create the neural network
     layers = [nn.Flatten(), nn.Linear(n_pixel_1d**2, layer_size), nn.ReLU()]
+    nn.init.xavier_uniform_(layers[1].weight)
     for i in range(n_layers - 1):
         layers.append(nn.Linear(layer_size, layer_size))
+        nn.init.xavier_uniform_(layers[-1].weight)
         layers.append(nn.ReLU())
     layers.append(nn.Linear(layer_size, 10))
+    nn.init.xavier_uniform_(layers[-1].weight)
     reg = nn.Sequential(*layers)
+    nn.utils.clip_grad_norm_(reg.parameters(), 0.1)
 
     # If the model is already saved then skip the training step
     saved_neural_network_path = "./tests/data/adversarial.pt"
@@ -101,7 +105,7 @@ def build_and_optimise_adversarial_mnist_torch(
     else:
         # Initialise the loss function, and optimizer
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(reg.parameters(), lr=0.001, weight_decay=0.001)
+        optimizer = optim.Adam(reg.parameters(), weight_decay=0.001)
 
         # Training loop
         num_epochs = 20

@@ -2,7 +2,7 @@ import numpy as np
 from pyscipopt import Model
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.neural_network import MLPRegressor
-from utils import read_csv_to_dict
+from utils import read_csv_to_dict, train_torch_neural_network
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
@@ -60,6 +60,7 @@ def build_and_optimise_auto_manufacturer(
     data_seed=42,
     gbdt_rf_or_mlp="gbdt",
     formulation="sos",
+    framework="sklearn",
     max_depth_or_layer_size=6,
     n_estimators_or_layers=6,
     build_only=False,
@@ -137,18 +138,44 @@ def build_and_optimise_auto_manufacturer(
             random_state=training_random_state,
         ).fit(np.concatenate((X, price), axis=1), resale_price.reshape(-1))
     elif gbdt_rf_or_mlp == "mlp":
-        hidden_layer_sizes = tuple(
-            [max_depth_or_layer_size for i in range(n_estimators_or_layers)]
-        )
-        reg_sales = MLPRegressor(
-            random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
-        ).fit(np.concatenate((X, price), axis=1), amount_sales.reshape(-1))
-        reg_price = MLPRegressor(
-            random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
-        ).fit(X, price.reshape(-1))
-        reg_resale = MLPRegressor(
-            random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
-        ).fit(np.concatenate((X, price), axis=1), resale_price.reshape(-1))
+        if framework == "sklearn":
+            hidden_layer_sizes = tuple(
+                [max_depth_or_layer_size for i in range(n_estimators_or_layers)]
+            )
+            reg_sales = MLPRegressor(
+                random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
+            ).fit(np.concatenate((X, price), axis=1), amount_sales.reshape(-1))
+            reg_price = MLPRegressor(
+                random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
+            ).fit(X, price.reshape(-1))
+            reg_resale = MLPRegressor(
+                random_state=training_random_state, hidden_layer_sizes=hidden_layer_sizes
+            ).fit(np.concatenate((X, price), axis=1), resale_price.reshape(-1))
+        else:
+            reg_price = train_torch_neural_network(
+                X,
+                price,
+                n_estimators_or_layers,
+                max_depth_or_layer_size,
+                training_seed,
+                reshape=False,
+            )
+            reg_sales = train_torch_neural_network(
+                np.concatenate((X, price), axis=1),
+                amount_sales,
+                n_estimators_or_layers,
+                max_depth_or_layer_size,
+                training_seed,
+                reshape=False,
+            )
+            reg_resale = train_torch_neural_network(
+                np.concatenate((X, price), axis=1),
+                resale_price,
+                n_estimators_or_layers,
+                max_depth_or_layer_size,
+                training_seed,
+                reshape=False,
+            )
     else:
         raise ValueError(f"Unknown value: {gbdt_rf_or_mlp}")
 

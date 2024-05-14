@@ -4,7 +4,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
-from utils import read_csv_to_dict
+from utils import read_csv_to_dict, train_torch_neural_network
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
@@ -64,11 +64,11 @@ def build_and_optimise_tree_planting(
     training_seed=42,
     predictor_type="linear",
     formulation="sos",
+    framework="sklearn",
     max_depth=5,
     n_estimators_layers=2,
     layer_size=8,
     n_grid_size=10,
-    min_trees=(1.7, 1.7, 1.7, 1.7),
     build_only=False,
 ):
     assert predictor_type in ("linear", "decision_tree", "gbdt", "mlp")
@@ -76,7 +76,10 @@ def build_and_optimise_tree_planting(
     data_random_state = np.random.RandomState(data_seed)
     max_sterilise = data_random_state.randint(low=8, high=13)
     costs = data_random_state.uniform(low=25, high=45, size=4)
-    max_budget = (n_grid_size**2) * np.median(costs) * 1.1
+    min_trees = data_random_state.uniform(
+        low=n_grid_size**2 / 80, high=n_grid_size**2 / 60, size=4
+    )
+    max_budget = (n_grid_size**2) * np.median(costs) * 1.2
     # Read the csv data
     data_dict = read_csv_to_dict("./tests/data/tree_survivability.csv")
 
@@ -129,10 +132,15 @@ def build_and_optimise_tree_planting(
                 max_depth=max_depth,
             ).fit(X_i, y_i.reshape(-1))
         elif predictor_type == "mlp":
-            hidden_layers = tuple([layer_size for i in range(n_estimators_layers)])
-            reg = MLPRegressor(
-                random_state=training_random_state, hidden_layer_sizes=hidden_layers
-            ).fit(X_i, y_i.reshape(-1))
+            if framework == "sklearn":
+                hidden_layers = tuple([layer_size for i in range(n_estimators_layers)])
+                reg = MLPRegressor(
+                    random_state=training_random_state, hidden_layer_sizes=hidden_layers
+                ).fit(X_i, y_i.reshape(-1))
+            else:
+                reg = train_torch_neural_network(
+                    X_i, y_i, n_estimators_layers, layer_size, training_seed, reshape=True
+                )
         else:
             raise ValueError(f"Unknown predictor type: {predictor_type}")
         regression_models.append(reg)
@@ -249,6 +257,8 @@ def build_and_optimise_tree_planting(
     # Add the predictors to the MIP
     pred_cons_list = []
     for i in range(len(species)):
+        if i != 1:
+            continue
         pred_cons_list.append(
             add_predictor_constr(
                 scip,
@@ -295,7 +305,6 @@ def test_tree_planting_linear():
         n_estimators_layers=2,
         layer_size=8,
         n_grid_size=10,
-        min_trees=(2, 2, 2, 2),
     )
 
 
@@ -308,7 +317,6 @@ def test_tree_planting_decision_tree():
         n_estimators_layers=2,
         layer_size=8,
         n_grid_size=10,
-        min_trees=(2, 2, 2, 2),
     )
 
 
@@ -321,7 +329,6 @@ def test_tree_planing_gbdt():
         n_estimators_layers=8,
         layer_size=8,
         n_grid_size=10,
-        min_trees=(2, 2, 2, 2),
     )
 
 
@@ -334,7 +341,6 @@ def test_tree_planting_mlp():
         n_estimators_layers=2,
         layer_size=6,
         n_grid_size=3,
-        min_trees=(0.5, 0.5, 0.5, 0.5),
     )
 
 
@@ -348,5 +354,4 @@ def test_tree_planting_mlp_bigm():
         n_estimators_layers=2,
         layer_size=6,
         n_grid_size=3,
-        min_trees=(0.5, 0.5, 0.5, 0.5),
     )

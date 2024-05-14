@@ -3,7 +3,7 @@ from pyscipopt import Model
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
 from tensorflow import keras
-from utils import read_csv_to_dict
+from utils import read_csv_to_dict, train_torch_neural_network
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
@@ -136,6 +136,16 @@ def build_and_optimise_water_potability(
             for i, class_val in enumerate(y):
                 y_keras[i][class_val] = 1
             clf.fit(X, y_keras, batch_size=256, epochs=50)
+        elif framework == "torch":
+            clf = train_torch_neural_network(
+                X,
+                y,
+                n_estimators_layers,
+                layer_size,
+                training_seed,
+                reshape=True,
+                binary_classifier=True,
+            )
         else:
             raise ValueError(f"Unknown framework: {framework}")
 
@@ -146,7 +156,7 @@ def build_and_optimise_water_potability(
     feature_vars = np.zeros((n_water_samples, n_features), dtype=object)
     features_removed = np.zeros((n_water_samples, n_features), dtype=object)
     features_added = np.zeros((n_water_samples, n_features), dtype=object)
-    if framework == "sklearn" or predictor_type == "gbdt":
+    if framework in ["sklearn", "torch"] or predictor_type == "gbdt":
         drinkable_water = np.zeros((n_water_samples, 1), dtype=object)
     else:
         drinkable_water = np.zeros((n_water_samples, 2), dtype=object)
@@ -210,13 +220,14 @@ def build_and_optimise_water_potability(
         )
 
     # Set the object to maximise the amount of drinkable water after treatment
-    if framework == "sklearn" or predictor_type == "gbdt":
+    if framework in ["sklearn", "torch"] or predictor_type == "gbdt":
         scip.setObjective(-np.sum(drinkable_water) + n_water_samples)
     else:
         scip.setObjective(-np.sum(drinkable_water[:, 1]) + n_water_samples)
 
     if not build_only:
         # Optimise the SCIP Model
+        scip.writeProblem("test.mps")
         scip.optimize()
 
         # We can check the "error" of the MIP embedding via the difference between SKLearn and SCIP output

@@ -4,6 +4,7 @@ from pyscipopt import Model
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.svm import SVR
+from utils import train_torch_neural_network
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
@@ -67,6 +68,7 @@ f(x) >= t
 def build_and_optimise_palatable_diet(
     mlp_gbdt_svm="mlp",
     formulation="sos",
+    framework="sklearn",
     n_estimators_or_layers=2,
     layer_sizes_or_depth=16,
     degree=2,
@@ -101,17 +103,26 @@ def build_and_optimise_palatable_diet(
         .iloc[0, :]
         .to_numpy()
     )
+    n_food = nutr_val.shape[0]
+    n_nutrients = nutr_val.shape[1]
     data = pd.read_csv("tests/data/WFP/palatable_data.csv").sample(frac=1)
     y = data["label"].to_numpy()
     x = data.drop(["label"], axis=1, inplace=False).to_numpy()
 
     # Train the regression model on whether the diet is palatable or not
     if mlp_gbdt_svm == "mlp":
-        hidden_layer_sizes = tuple([layer_sizes_or_depth for i in range(n_estimators_or_layers)])
-        reg = MLPRegressor(
-            random_state=training_random_state,
-            hidden_layer_sizes=hidden_layer_sizes,
-        ).fit(x, y.reshape(-1))
+        if framework == "sklearn":
+            hidden_layer_sizes = tuple(
+                [layer_sizes_or_depth for i in range(n_estimators_or_layers)]
+            )
+            reg = MLPRegressor(
+                random_state=training_random_state,
+                hidden_layer_sizes=hidden_layer_sizes,
+            ).fit(x, y.reshape(-1))
+        else:
+            reg = train_torch_neural_network(
+                x, y, n_estimators_or_layers, layer_sizes_or_depth, training_seed, reshape=True
+            )
     elif mlp_gbdt_svm == "gbdt":
         reg = GradientBoostingRegressor(
             max_depth=5, n_estimators=n_estimators_or_layers, random_state=training_random_state
@@ -122,8 +133,6 @@ def build_and_optimise_palatable_diet(
         raise ValueError(f"No known model for type {mlp_gbdt_svm}")
 
     # Create the SCIP Model and model all variables
-    n_food = nutr_val.shape[0]
-    n_nutrients = nutr_val.shape[1]
     scip = Model()
     input_vars = np.zeros((1, n_food), dtype=object)
     for i in range(n_food):

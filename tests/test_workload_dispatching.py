@@ -2,6 +2,7 @@ import numpy as np
 from pyscipopt import Model
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.neural_network import MLPRegressor
+from utils import train_torch_neural_network
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
@@ -89,6 +90,7 @@ def build_and_optimise_workload_dispatching(
     layer_size_or_depth=3,
     nn_or_gbdt="gbdt",
     formulation="sos",
+    framework="sklearn",
     training_seed=42,
     data_seed=42,
     build_only=False,
@@ -126,18 +128,22 @@ def build_and_optimise_workload_dispatching(
         max_avg_cpi = max(np.max(x[:, 0]), max_avg_cpi)
         layer_sizes = tuple([layer_size_or_depth for i in range(num_layers_or_estimators)])
         if nn_or_gbdt == "nn":
-            reg = MLPRegressor(
-                hidden_layer_sizes=layer_sizes,
-                random_state=training_random_state,
-                learning_rate_init=0.01,
-            )
+            if framework == "sklearn":
+                reg = MLPRegressor(
+                    hidden_layer_sizes=layer_sizes,
+                    random_state=training_random_state,
+                    learning_rate_init=0.01,
+                ).fit(x, y)
+            else:
+                reg = train_torch_neural_network(
+                    x, y, num_layers_or_estimators, layer_size_or_depth, training_seed
+                )
         else:
             reg = GradientBoostingRegressor(
                 n_estimators=num_layers_or_estimators,
                 random_state=training_random_state,
                 max_depth=layer_size_or_depth,
-            )
-        reg.fit(x, y)
+            ).fit(x, y)
         pred_input = [avg_cpi_vars[i], avg_neighbour_cpi_vars[i], avg_far_cpi_vars[i]]
         pred_cons = add_predictor_constr(
             scip,

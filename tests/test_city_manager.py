@@ -3,7 +3,7 @@ from pyscipopt import Model
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
-from utils import read_csv_to_dict
+from utils import read_csv_to_dict, train_torch_neural_network
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
@@ -70,15 +70,16 @@ def build_and_optimise_city_manager(
     training_seed=42,
     dt_gbdt_or_mlp="dt",
     formulation="sos",
+    framework="sklearn",
     max_depth_or_layer_size=6,
     n_estimators_layers=3,
-    n_apartments=50,
-    grid_length=5,
+    n_apartments=25,
     epsilon=0.001,
     build_only=False,
 ):
     # Path to apartment price data
     data_dict = read_csv_to_dict("./tests/data/apartments.csv")
+    grid_length = 5
 
     # Set the random seed
     data_random_state = np.random.RandomState(data_seed)
@@ -126,10 +127,15 @@ def build_and_optimise_city_manager(
             n_estimators=n_estimators_layers,
         ).fit(X, y.reshape(-1))
     elif dt_gbdt_or_mlp == "mlp":
-        hidden_layers = tuple([max_depth_or_layer_size for i in range(n_estimators_layers)])
-        reg = MLPRegressor(
-            random_state=training_random_state, hidden_layer_sizes=hidden_layers
-        ).fit(X, y.reshape(-1))
+        if framework == "sklearn":
+            hidden_layers = tuple([max_depth_or_layer_size for i in range(n_estimators_layers)])
+            reg = MLPRegressor(
+                random_state=training_random_state, hidden_layer_sizes=hidden_layers
+            ).fit(X, y.reshape(-1))
+        else:
+            reg = train_torch_neural_network(
+                X, y, n_estimators_layers, max_depth_or_layer_size, training_seed, reshape=False
+            )
     else:
         raise ValueError(f"Unknown value: {dt_gbdt_or_mlp}")
 
@@ -378,8 +384,7 @@ def test_dt_city_manager():
         dt_gbdt_or_mlp="dt",
         max_depth_or_layer_size=6,
         n_estimators_layers=3,
-        n_apartments=50,
-        grid_length=5,
+        n_apartments=25,
         epsilon=0.001,
         build_only=False,
     )
@@ -392,8 +397,7 @@ def test_gbdt_city_manager():
         dt_gbdt_or_mlp="gbdt",
         max_depth_or_layer_size=4,
         n_estimators_layers=3,
-        n_apartments=50,
-        grid_length=5,
+        n_apartments=25,
         epsilon=0.001,
         build_only=False,
     )
@@ -408,7 +412,6 @@ def test_mlp_city_manager():
         max_depth_or_layer_size=3,
         n_estimators_layers=2,
         n_apartments=3,
-        grid_length=5,
         epsilon=0.001,
         build_only=False,
     )
@@ -423,7 +426,6 @@ def test_mlp_bigm_city_manager():
         max_depth_or_layer_size=3,
         n_estimators_layers=2,
         n_apartments=3,
-        grid_length=5,
         epsilon=0.001,
         build_only=False,
     )
