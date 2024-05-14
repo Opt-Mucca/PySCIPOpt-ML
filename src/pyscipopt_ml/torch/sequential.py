@@ -197,7 +197,7 @@ class SequentialConstr(BaseNNConstr):
                         vtype="C",
                         lb=None,
                         ub=None,
-                        name_prefix=self.unique_naming_prefix + f"layer_{i}",
+                        name_prefix=self.unique_naming_prefix + f"layer_{i}_",
                     )
                     self._created_vars.append(output)
                 layer = self.add_dense_layer(
@@ -206,7 +206,7 @@ class SequentialConstr(BaseNNConstr):
                     layer_bias,
                     "identity",
                     output,
-                    unique_naming_prefix=self.unique_naming_prefix + f"linear_{i}",
+                    unique_naming_prefix=self.unique_naming_prefix + f"linear_{i}_",
                     **kwargs,
                 )
                 input_vars = layer.output

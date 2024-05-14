@@ -183,7 +183,7 @@ def build_and_optimise_city_manager(
 
     # Now fill in the actual variables
     for i in range(n_apartments):
-        price_vars[i][0] = scip.addVar(vtype="C", lb=0, ub=50, name=f"price_{i}")
+        price_vars[i][0] = scip.addVar(vtype="C", lb=-25, ub=100, name=f"price_{i}")
         for j, feature in enumerate(features):
             feature_vars[i][j] = scip.addVar(vtype="C", lb=0, name=f"feature_{i}_{j}")
             # Randomly generate characteristics
@@ -204,8 +204,6 @@ def build_and_optimise_city_manager(
                         )
                     ),
                 )
-            elif feature == "squareMeters":
-                scip.chgVarUb(feature_vars[i][j], 200)
             else:
                 scip.chgVarUb(feature_vars[i][j], 2 * grid_length)
 
@@ -264,7 +262,7 @@ def build_and_optimise_city_manager(
 
             dist_builds = [
                 scip.addVar(
-                    vtype="C", lb=0, ub=grid_length, name=f"sum_dist_{building_type}_{i}_{j}"
+                    vtype="C", lb=0, ub=2 * grid_length, name=f"sum_dist_{building_type}_{i}_{j}"
                 )
                 for j in range(n_buildings)
             ]
@@ -323,7 +321,7 @@ def build_and_optimise_city_manager(
             if n_buildings == 1:
                 scip.addCons(
                     feature_vars[i][feature_idx] == dist_builds[0],
-                    name=f"feature_{i}_{feature_idx}",
+                    name=f"feature_dist_{i}_{feature_idx}",
                 )
             else:
                 aux_max_var_bin = scip.addVar(vtype="B", name=f"aux_max_{i}_{building_type}")
