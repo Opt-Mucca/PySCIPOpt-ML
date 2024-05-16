@@ -227,7 +227,6 @@ def build_and_optimise_water_potability(
 
     if not build_only:
         # Optimise the SCIP Model
-        scip.writeProblem("test.mps")
         scip.optimize()
 
         # We can check the "error" of the MIP embedding via the difference between SKLearn and SCIP output

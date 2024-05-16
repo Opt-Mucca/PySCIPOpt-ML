@@ -162,7 +162,7 @@ def build_and_optimise_tree_planting(
                     vtype="C", lb=-10, ub=10, name=f"survive_tree_{i}_{j}_{k}"
                 )
                 tree_adjusted_survive_vars[i][j][k] = scip.addVar(
-                    vtype="C", lb=-1, ub=1, name=f"adjusted_survive_tree_{i}_{j}_{k}"
+                    vtype="C", lb=-10, ub=1, name=f"adjusted_survive_tree_{i}_{j}_{k}"
                 )
 
     # Ensure that only a single tree is planted in a single grid point
@@ -257,8 +257,6 @@ def build_and_optimise_tree_planting(
     # Add the predictors to the MIP
     pred_cons_list = []
     for i in range(len(species)):
-        if i != 1:
-            continue
         pred_cons_list.append(
             add_predictor_constr(
                 scip,
