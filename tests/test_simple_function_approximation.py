@@ -1,11 +1,8 @@
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
 from pyscipopt import Model
 from sklearn.neural_network import MLPRegressor
 from tensorflow import keras
-from torch.utils.data import DataLoader, TensorDataset
+from utils import train_torch_neural_network
 
 from src.pyscipopt_ml.add_predictor import add_predictor_constr
 
@@ -43,10 +40,11 @@ min(f(x))
 
 def build_and_optimise_function_approximation_model(
     n_inputs=5,
-    n_samples=1000,
+    n_samples=2500,
     framework="sklearn",
     formulation="sos",
     layer_size=8,
+    n_layers=3,
     training_seed=42,
     data_seed=42,
     build_only=False,
@@ -56,7 +54,7 @@ def build_and_optimise_function_approximation_model(
     )
 
     if framework == "sklearn":
-        hidden_layer_sizes = tuple([layer_size for i in range(3)])
+        hidden_layer_sizes = tuple([layer_size for _ in range(n_layers)])
         reg_1 = MLPRegressor(
             random_state=training_seed,
             hidden_layer_sizes=hidden_layer_sizes,
@@ -68,90 +66,30 @@ def build_and_optimise_function_approximation_model(
     elif framework == "keras":
         keras.utils.set_random_seed(training_seed)
         reg_1 = keras.Sequential()
-        reg_1.add(keras.Input(shape=(n_inputs,)))
-        reg_1.add(keras.layers.Dense(layer_size, activation="linear"))
-        reg_1.add(keras.layers.Activation(keras.activations.relu))
-        reg_1.add(keras.layers.Dense(layer_size, activation="sigmoid"))
-        reg_1.add(keras.layers.Dense(layer_size, activation="relu"))
-        reg_1.add(keras.layers.Dense(1, activation="linear"))
-        reg_1.compile(optimizer="adam", loss="mse")
-        reg_1.fit(X, y_1, batch_size=32, epochs=200)
         reg_2 = keras.Sequential()
+        reg_1.add(keras.Input(shape=(n_inputs,)))
         reg_2.add(keras.Input(shape=(n_inputs,)))
-        reg_2.add(keras.layers.Dense(layer_size, activation="linear"))
-        reg_2.add(keras.layers.Activation(keras.activations.sigmoid))
-        reg_2.add(keras.layers.Dense(layer_size, activation="tanh"))
-        reg_2.add(keras.layers.Dense(layer_size, activation="relu"))
+        for _ in range(n_layers):
+            reg_1.add(keras.layers.Dense(layer_size, activation="relu"))
+            reg_2.add(keras.layers.Dense(layer_size, activation="relu"))
+        reg_1.add(keras.layers.Dense(1, activation="linear"))
         reg_2.add(keras.layers.Dense(1, activation="linear"))
+        reg_1.compile(optimizer="adam", loss="mse")
+        reg_1.fit(X, y_1, batch_size=64, epochs=20)
         reg_2.compile(optimizer="adam", loss="mse")
-        reg_2.fit(X, y_2, batch_size=32, epochs=200)
+        reg_2.fit(X, y_2, batch_size=64, epochs=20)
     elif framework == "torch":
-        torch.random.manual_seed(training_seed)
-        reg_1 = nn.Sequential(
-            nn.Linear(n_inputs, layer_size),
-            nn.ReLU(),
-            nn.Linear(layer_size, layer_size),
-            nn.ReLU(),
-            nn.Linear(layer_size, layer_size),
-            nn.ReLU(),
-            nn.Linear(layer_size, 1),
+        reg_1 = train_torch_neural_network(
+            X, y_1, n_layers, layer_size, training_seed, reshape=True
         )
-        reg_2 = nn.Sequential(
-            nn.Linear(n_inputs, layer_size),
-            nn.ReLU(),
-            nn.Linear(layer_size, layer_size),
-            nn.ReLU(),
-            nn.Linear(layer_size, layer_size),
-            nn.ReLU(),
-            nn.Linear(layer_size, 1),
+        reg_2 = train_torch_neural_network(
+            X, y_2, n_layers, layer_size, training_seed, reshape=True
         )
-
-        # Convert data into PyTorch tensors
-        X_tensor = torch.tensor(X, dtype=torch.float32)
-        y_1_tensor = torch.tensor(y_1, dtype=torch.float32)
-        y_2_tensor = torch.tensor(y_2, dtype=torch.float32)
-
-        # Create a DataLoader for handling batches
-        dataset_1 = TensorDataset(X_tensor, y_1_tensor)
-        dataset_2 = TensorDataset(X_tensor, y_2_tensor)
-        batch_size = 32
-        dataloader_1 = DataLoader(dataset_1, batch_size=batch_size, shuffle=True)
-        dataloader_2 = DataLoader(dataset_2, batch_size=batch_size, shuffle=True)
-
-        # Initialise the loss function and optimizer
-        criterion = nn.MSELoss()
-        optimizer_1 = optim.Adam(reg_1.parameters(), lr=0.001, weight_decay=0.0001)
-        optimizer_2 = optim.Adam(reg_2.parameters(), lr=0.001, weight_decay=0.0001)
-
-        # Training loop
-        for epoch in range(200):
-            for batch_X, batch_y in dataloader_1:
-                # Forward pass
-                outputs = reg_1(batch_X)
-
-                # Calculate loss
-                loss = criterion(outputs, batch_y.view(-1, 1))  # Assuming y is a 1D array
-
-                # Backward pass and optimization
-                optimizer_1.zero_grad()
-                loss.backward()
-                optimizer_1.step()
-            for batch_X, batch_y in dataloader_2:
-                # Forward pass
-                outputs = reg_2(batch_X)
-
-                # Calculate loss
-                loss = criterion(outputs, batch_y.view(-1, 1))  # Assuming y is a 1D array
-
-                # Backward pass and optimization
-                optimizer_2.zero_grad()
-                loss.backward()
-                optimizer_2.step()
     else:
         raise ValueError(f"Framework {framework} is unknown")
 
     # Now build the SCIP Model and embed the neural networks
-    scip, input_vars, output_vars = build_basic_scip_model(n_inputs)
+    scip, input_vars, output_vars = build_basic_scip_model(n_inputs, np.median(y_2))
     mlp_cons_1 = add_predictor_constr(
         scip,
         reg_1,
@@ -190,10 +128,10 @@ def build_random_quadratic_functions(seed=42, n_inputs=5, n_samples=1000):
 
     # Generate two random quadratic functions f(x) = x^{t}Qx + Ax + c
     quadratic_coefficients = np.round(
-        np.random.uniform(0, 5, size=(2, n_inputs, n_inputs)), decimals=3
+        np.random.uniform(-5, 5, size=(2, n_inputs, n_inputs)), decimals=3
     )
-    linear_coefficients = np.round(np.random.uniform(0, 1, size=(2, n_inputs)), decimals=3)
-    constant = np.round(np.random.uniform(0, 1, size=(2,)), decimals=3)
+    linear_coefficients = np.round(np.random.uniform(-1, 1, size=(2, n_inputs)), decimals=3)
+    constant = np.round(np.random.uniform(-1, 1, size=(2,)), decimals=3)
 
     # Generate data from the quadratic function
     X = np.random.uniform(-10, 10, size=(n_samples, n_inputs))
@@ -214,7 +152,7 @@ def build_random_quadratic_functions(seed=42, n_inputs=5, n_samples=1000):
     return X, y_1, y_2
 
 
-def build_basic_scip_model(n_inputs):
+def build_basic_scip_model(n_inputs, intercept):
     # Initialise a SCIP Model
     scip = Model()
 
@@ -222,9 +160,9 @@ def build_basic_scip_model(n_inputs):
     input_vars = np.zeros((1, n_inputs), dtype=object)
     for i in range(n_inputs):
         # Tight bounds are important for MIP formulations of neural networks. They often drastically improve
-        # performance. As our training data is in the range [-10, 10], we pass that as bounds [-10, 10].
+        # performance. As our training data is in the range [-10, 10], we pass a multiple as bounds [-20, 20].
         # These bounds will then propagate to other variables.
-        input_vars[0][i] = scip.addVar(name=f"x_{i}", vtype="C", lb=-10, ub=10)
+        input_vars[0][i] = scip.addVar(name=f"x_{i}", vtype="C", lb=-20, ub=20)
 
     # Create the output variables. (Note that these variables will be automatically constructed if not specified)
     output_vars = np.zeros((2, 1), dtype=object)
@@ -232,7 +170,7 @@ def build_basic_scip_model(n_inputs):
         output_vars[i] = scip.addVar(name=f"y_{i}", vtype="C", lb=None, ub=None)
 
     # Now set additional constraints and set the objective
-    scip.addCons(output_vars[1][0] == 10, name="fix_output_reg_2")
+    scip.addCons(output_vars[1][0] == intercept, name="fix_output_reg_2")
     scip.setObjective(output_vars[0][0] + 10000)
 
     return scip, input_vars, output_vars
