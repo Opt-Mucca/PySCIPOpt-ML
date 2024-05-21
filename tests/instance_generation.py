@@ -1,298 +1,495 @@
 from test_adversarial_example import build_and_optimise_adversarial_mnist_torch
 from test_auto_manufacturer import build_and_optimise_auto_manufacturer
 from test_city_manager import build_and_optimise_city_manager
+from test_palatable_diet_problem import build_and_optimise_palatable_diet
 from test_simple_function_approximation import (
     build_and_optimise_function_approximation_model,
 )
 from test_tree_planting import build_and_optimise_tree_planting
 from test_water_potability import build_and_optimise_water_potability
 from test_wine_manufacturer import build_and_optimise_wine_manufacturer
+from test_workload_dispatching import build_and_optimise_workload_dispatching
 
-wine_manufacturer_runs = [
-    (40, 35, 5, 4.25, "sklearn", "rf", 3, 3, 0.0001),
-    (41, 50, 5, 4.15, "sklearn", "rf", 3, 4, 0.0001),
-    (42, 45, 6, 4.25, "sklearn", "rf", 4, 3, 0.0001),
-    (43, 35, 5, 4.40, "sklearn", "gbdt", 5, 3, 0.0001),
-    (44, 40, 6, 4.45, "sklearn", "gbdt", 3, 3, 0.0001),
-    (45, 35, 5, 4.25, "sklearn", "gbdt", 3, 5, 0.0001),
-    (46, 42, 6, 4.2, "xgboost", "rf", 2, 4, 0.0001),
-    (47, 35, 7, 4.25, "xgboost", "rf", 3, 3, 0.0001),
-    (48, 45, 5, 4.30, "xgboost", "gbdt", 2, 4, 0.0001),
-    (49, 38, 6, 4.15, "xgboost", "gbdt", 3, 3, 0.0001),
-    (50, 48, 8, 4.4, "lightgbm", "rf", 2, 3, 0.0001),
-    (51, 35, 6, 4.60, "lightgbm", "rf", 3, 3, 0.0001),
-    (52, 50, 6, 4.30, "lightgbm", "gbdt", 5, 2, 0.0001),
-    (53, 45, 6, 4.20, "lightgbm", "gbdt", 3, 3, 0.0001),
-]
+write_only = True
+time_limit = 1200
+generate_wine = False
+generate_water = False
+generate_auto = False
+generate_tree = False
+generate_function = False
+generate_workload = False
+generate_city = False
+generate_diet = False
+generate_adversarial = False
 
-summarised_wine_results = []
-for i, test_arguments in enumerate(wine_manufacturer_runs):
-    seed = test_arguments[0]
-    n_vineyards = test_arguments[1]
-    n_wines_to_produce = test_arguments[2]
-    min_wine_quality = test_arguments[3]
-    ml_framework = test_arguments[4]
-    gbdt_or_rf = test_arguments[5]
-    n_estimators = test_arguments[6]
-    max_depth = test_arguments[7]
-    scip = build_and_optimise_wine_manufacturer(
-        seed=seed,
-        n_vineyards=n_vineyards,
-        n_wines_to_produce=n_wines_to_produce,
-        min_wine_quality=min_wine_quality,
-        sklearn_xgboost_lightgbm=ml_framework,
-        gbdt_or_rf=gbdt_or_rf,
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        build_only=True,
-    )
-    scip.writeProblem(f"tests/data/instances/wine_{i}.mps")
-    summarised_wine_results.append(
-        (i, scip.getStatus(), scip.getSolvingTime(), scip.getNTotalNodes())
-    )
-print(summarised_wine_results)
+for d_s in [0, 1]:
+    for t_s in [0, 1]:
 
-water_potability_runs = [
-    (
-        40,
-        80,
-        (20, 16, 20),
-        (3, 40, 200, 10, 120, 20, 1.2, 5, 2),
-        (8.4, 100, 300, 50, 186, 220, 3, 8.2, 6.4),
-    ),
-    (
-        41,
-        82,
-        (10, 20, 18),
-        (7, 50, 340, 2, 30, 125, 11.5, 5, 11.9),
-        (8.2, 50, 320, 2.3, 32, 126, 11.9, 6, 11.3),
-    ),
-    (
-        42,
-        70,
-        (20, 24, 7),
-        (2, 15, 200, 1.2, 20, 20, 1.2, 5, 0.8),
-        (2.4, 22, 200, 1.1, 26, 22, 1.7, 5.2, 1.1),
-    ),
-    (
-        43,
-        60,
-        (24, 20, 30),
-        (3, 20, 240, 1, 20, 25, 1.5, 4.6, 1),
-        (2.4, 20, 220, 1.3, 22, 26, 1.9, 5.5, 1.3),
-    ),
-    (
-        45,
-        40,
-        (20, 32, 20),
-        (3, 20, 240, 1, 20, 25, 1.5, 4.6, 1),
-        (2.4, 20, 220, 1.3, 22, 26, 1.9, 5.5, 1.3),
-    ),
-    (
-        46,
-        60,
-        (24, 9, 24),
-        (2, 15, 200, 1.2, 20, 20, 1.2, 5, 0.8),
-        (2.2, 22, 200, 1.1, 26, 22, 1.7, 5.2, 1.1),
-    ),
-    (
-        47,
-        55,
-        (18, 18, 28),
-        (3, 20, 240, 1, 20, 25, 1.5, 4.6, 1),
-        (2.4, 20, 220, 1.3, 22, 26, 1.9, 5.5, 1.3),
-    ),
-]
+        # Generate the wine instances
+        wine_data = []
+        for n_v in [30, 35]:
+            for n_w in [4, 5]:
+                # Generate the neural network instances
+                for formulation in ["bigm", "sos"]:
+                    for n_e, d in [(2, 16), (2, 32), (3, 16)]:
+                        if generate_wine:
+                            scip = build_and_optimise_wine_manufacturer(
+                                data_seed=d_s,
+                                training_seed=t_s,
+                                n_vineyards=n_v,
+                                n_wines_to_produce=n_w,
+                                formulation=formulation,
+                                framework="torch",
+                                gbdt_rf_or_mlp="mlp",
+                                n_estimators_layers=n_e,
+                                layer_size=d,
+                                epsilon=0.0001,
+                                build_only=True,
+                            )
+                            if write_only:
+                                scip.writeProblem(
+                                    f"tests/surrogatelib/wine_{n_v}_{n_w}_mlp-{formulation}_{n_e}_{d}_torch_{d_s}_{t_s}.mps"
+                                )
+                            else:
+                                scip.setParam("limits/time", time_limit)
+                                scip.optimize()
+                                wine_data.append(
+                                    [
+                                        n_v,
+                                        n_w,
+                                        formulation,
+                                        n_e,
+                                        d,
+                                        scip.getStatus(),
+                                        scip.getSolvingTime(),
+                                        scip.getNTotalNodes(),
+                                    ]
+                                )
+                # Generate the ensemble tree instances
+                for fw in ["sklearn", "lightgbm", "xgboost"]:
+                    for p_t in ["gbdt", "rf"]:
+                        for n_e, d in [(4, 4), (3, 5)]:
+                            if generate_wine:
+                                scip = build_and_optimise_wine_manufacturer(
+                                    data_seed=d_s,
+                                    training_seed=t_s,
+                                    n_vineyards=n_v,
+                                    n_wines_to_produce=n_w,
+                                    framework=fw,
+                                    gbdt_rf_or_mlp=p_t,
+                                    n_estimators_layers=n_e,
+                                    max_depth=d,
+                                    epsilon=0.0001,
+                                    build_only=True,
+                                )
+                                if write_only:
+                                    if fw == "sklearn":
+                                        fw_short = "sk"
+                                    elif fw == "lightgbm":
+                                        fw_short = "lgb"
+                                    else:
+                                        fw_short = "xgb"
+                                    scip.writeProblem(
+                                        f"tests/surrogatelib/wine_{n_v}_{n_w}_{p_t}_{n_e}_{d}_{fw_short}_{d_s}_{t_s}.mps"
+                                    )
+                                else:
+                                    scip.setParam("limits/time", time_limit)
+                                    scip.optimize()
+                                    wine_data.append(
+                                        [
+                                            n_v,
+                                            n_w,
+                                            fw,
+                                            p_t,
+                                            n_e,
+                                            d,
+                                            scip.getStatus(),
+                                            scip.getSolvingTime(),
+                                            scip.getNTotalNodes(),
+                                        ]
+                                    )
 
-summarised_water_results = []
-for i, test_arguments in enumerate(water_potability_runs):
-    seed = test_arguments[0]
-    n_water_samples = test_arguments[1]
-    layer_sizes = test_arguments[2]
-    remove_feature_budgets = test_arguments[3]
-    add_feature_budgets = test_arguments[4]
+        # Generate the water instances
+        water_data = []
+        for n_w in [20, 25, 30]:
+            # Generate the ensemble tree instances
+            for n_e, d in [(6, 5), (7, 5), (8, 5)]:
+                if generate_water:
+                    scip = build_and_optimise_water_potability(
+                        data_seed=d_s,
+                        training_seed=t_s,
+                        predictor_type="gbdt",
+                        n_water_samples=n_w,
+                        max_depth=d,
+                        n_estimators_layers=n_e,
+                        framework="sklearn",
+                        build_only=True,
+                    )
+                    if write_only:
+                        scip.writeProblem(
+                            f"tests/surrogatelib/water_{n_w}_gbdt_{n_e}_{d}_sk_{d_s}_{t_s}.mps"
+                        )
+                    else:
+                        scip.setParam("limits/time", time_limit)
+                        scip.optimize()
+                        water_data.append(
+                            [
+                                n_w,
+                                "gbdt",
+                                n_e,
+                                d,
+                                scip.getStatus(),
+                                scip.getSolvingTime(),
+                                scip.getNTotalNodes(),
+                            ]
+                        )
+            # Generate the neural network instances
+            for formulation in ["bigm", "sos"]:
+                for n_e, d in [(7, 16), (8, 16)]:
+                    if generate_water:
+                        scip = build_and_optimise_water_potability(
+                            data_seed=d_s,
+                            training_seed=t_s,
+                            predictor_type="mlp",
+                            formulation=formulation,
+                            n_water_samples=n_w,
+                            layer_size=d,
+                            n_estimators_layers=n_e,
+                            framework="torch",
+                            build_only=True,
+                        )
+                        if write_only:
+                            scip.writeProblem(
+                                f"tests/surrogatelib/water_{n_w}_mlp-{formulation}_{n_e}_{d}_torch_{d_s}_{t_s}.mps"
+                            )
+                        else:
+                            scip.setParam("limits/time", time_limit)
+                            scip.optimize()
+                            water_data.append(
+                                [
+                                    n_w,
+                                    "mlp",
+                                    "torch",
+                                    n_e,
+                                    d,
+                                    scip.getStatus(),
+                                    scip.getSolvingTime(),
+                                    scip.getNTotalNodes(),
+                                ]
+                            )
 
-    scip = build_and_optimise_water_potability(
-        seed=seed,
-        n_water_samples=n_water_samples,
-        layers_sizes=layer_sizes,
-        remove_feature_budgets=remove_feature_budgets,
-        add_feature_budgets=add_feature_budgets,
-        build_only=True,
-    )
-    scip.writeProblem(f"tests/data/instances/water_{i}.mps")
-    summarised_water_results.append(
-        (i, scip.getStatus(), scip.getSolvingTime(), scip.getNTotalNodes())
-    )
+        # Generate the tree planting instances
+        tree_data = []
+        for g_s in [6, 7, 8]:
+            for p_t in ["linear", "gbdt", "decision_tree"]:
+                if p_t == "linear":
+                    gbdt_list = [(1, 1)]
+                elif p_t == "decision_tree":
+                    gbdt_list = [(1, 4), (1, 5)]
+                else:
+                    gbdt_list = [(5, 4), (6, 4), (5, 5), (6, 5)]
+                for n_e, d in gbdt_list:
+                    if generate_tree:
+                        scip = build_and_optimise_tree_planting(
+                            data_seed=d_s,
+                            training_seed=t_s,
+                            predictor_type=p_t,
+                            framework="sklearn",
+                            max_depth=d,
+                            n_estimators_layers=n_e,
+                            build_only=True,
+                        )
+                        if write_only:
+                            if p_t == "decision_tree":
+                                p_t_short = "dt"
+                            else:
+                                p_t_short = p_t
+                            if p_t == "gbdt":
+                                scip.writeProblem(
+                                    f"tests/surrogatelib/tree_{g_s}_{p_t_short}_{n_e}_{d}_sk_{d_s}_{t_s}.mps"
+                                )
+                            if p_t == "decision_tree":
+                                scip.writeProblem(
+                                    f"tests/surrogatelib/tree_{g_s}_{p_t_short}_{d}_sk_{d_s}_{t_s}.mps"
+                                )
+                            else:
+                                scip.writeProblem(
+                                    f"tests/surrogatelib/tree_{g_s}_{p_t_short}_sk_{d_s}_{t_s}.mps"
+                                )
+                        else:
+                            scip.setParam("limits/time", time_limit)
+                            scip.optimize()
+                            tree_data.append(
+                                [
+                                    g_s,
+                                    p_t,
+                                    n_e,
+                                    d,
+                                    scip.getStatus(),
+                                    scip.getSolvingTime(),
+                                    scip.getNTotalNodes(),
+                                ]
+                            )
 
-print(summarised_water_results)
+        # Generate function approximation instances
+        function_data = []
+        for n_i in [5, 6, 7]:
+            for fw in ["sklearn", "keras", "torch"]:
+                for formulation in ["bigm", "sos"]:
+                    for n_e, d in [(3, 16), (3, 32), (4, 16), (5, 16)]:
+                        if generate_function:
+                            scip = build_and_optimise_function_approximation_model(
+                                data_seed=d_s,
+                                training_seed=t_s,
+                                n_inputs=n_i,
+                                framework=fw,
+                                formulation=formulation,
+                                layer_size=d,
+                                n_layers=n_e,
+                                build_only=True,
+                            )
+                            if write_only:
+                                scip.writeProblem(
+                                    f"tests/surrogatelib/function_{n_i}_mlp-{formulation}_{n_e}_{d}_{fw}_{d_s}_{t_s}.mps"
+                                )
+                            else:
+                                scip.setParam("limits/time", time_limit)
+                                scip.optimize()
+                                function_data.append(
+                                    [
+                                        n_i,
+                                        fw,
+                                        formulation,
+                                        n_e,
+                                        d,
+                                        scip.getStatus(),
+                                        scip.getSolvingTime(),
+                                        scip.getNTotalNodes(),
+                                    ]
+                                )
 
+        # Generate city planning instances
+        city_data = []
+        for n_a in [25, 35, 45]:
+            for p_t in ["dt", "gbdt"]:
+                if p_t == "dt":
+                    gbdt_list = [(1, 6), (1, 7), (1, 8)]
+                else:
+                    gbdt_list = [(2, 4), (2, 5), (3, 4), (3, 5)]
+                for n_e, d in gbdt_list:
+                    if generate_city:
+                        scip = build_and_optimise_city_manager(
+                            data_seed=d_s,
+                            training_seed=t_s,
+                            dt_gbdt_or_mlp=p_t,
+                            framework="sklearn",
+                            max_depth_or_layer_size=d,
+                            n_estimators_layers=n_e,
+                            n_apartments=n_a,
+                            epsilon=0.0001,
+                            build_only=True,
+                        )
+                        if write_only:
+                            if p_t == "dt":
+                                scip.writeProblem(
+                                    f"tests/surrogatelib/city_{n_a}_{p_t}_{d}_sk_{d_s}_{t_s}.mps"
+                                )
+                            else:
+                                scip.writeProblem(
+                                    f"tests/surrogatelib/city_{n_a}_{p_t}_{n_e}_{d}_sk_{d_s}_{t_s}.mps"
+                                )
+                        else:
+                            scip.setParam("limits/time", time_limit)
+                            scip.optimize()
+                            city_data.append(
+                                [
+                                    n_a,
+                                    p_t,
+                                    n_e,
+                                    d,
+                                    scip.getStatus(),
+                                    scip.getSolvingTime(),
+                                    scip.getNTotalNodes(),
+                                ]
+                            )
 
-tree_planting_runs = [
-    (42, "linear", 5, 10, [2, 2, 2, 2], 10, [25, 30, 40, 50], 3350),
-    (43, "linear", 5, 11, [2.5, 2.5, 2.5, 2.5], 11, [25, 30, 40, 50], 3400),
-    (44, "linear", 5, 12, [2, 2, 2, 2], 12, [25, 30, 40, 50], 3900),
-    (45, "linear", 5, 13, [2.3, 2.3, 2.3, 2.3], 10, [25, 30, 40, 52], 4300),
-    (46, "decision_tree", 6, 14, [5, 3.8, 5.3, 5.6], 5, [25, 30, 40, 50], 5550),
-]
+        # Generate auto manufacturer instances
+        auto_data = []
+        # The neural network instances first
+        for formulation in ["bigm", "sos"]:
+            for n_e, d in [(1, 64), (2, 16), (2, 32), (3, 16)]:
+                if generate_auto:
+                    scip = build_and_optimise_auto_manufacturer(
+                        training_seed=t_s,
+                        data_seed=d_s,
+                        gbdt_rf_or_mlp="mlp",
+                        framework="torch",
+                        max_depth_or_layer_size=d,
+                        n_estimators_or_layers=n_e,
+                        build_only=True,
+                    )
+                    if write_only:
+                        scip.writeProblem(
+                            f"tests/surrogatelib/auto_mlp-{formulation}_{n_e}_{d}_torch_{d_s}_{t_s}.mps"
+                        )
+                    else:
+                        scip.setParam("limits/time", time_limit)
+                        scip.optimize()
+                        auto_data.append(
+                            [
+                                formulation,
+                                "torch",
+                                n_e,
+                                d,
+                                scip.getStatus(),
+                                scip.getSolvingTime(),
+                                scip.getNTotalNodes(),
+                            ]
+                        )
+        # The ensemble tree instances next
+        for p_t in ["gbdt", "rf"]:
+            for n_e, d in [(8, 7), (7, 8), (8, 8)]:
+                if generate_auto:
+                    scip = build_and_optimise_auto_manufacturer(
+                        training_seed=t_s,
+                        data_seed=d_s,
+                        gbdt_rf_or_mlp=p_t,
+                        framework="sklearn",
+                        max_depth_or_layer_size=d,
+                        n_estimators_or_layers=n_e,
+                        build_only=True,
+                    )
+                    if write_only:
+                        scip.writeProblem(
+                            f"tests/surrogatelib/auto_{p_t}_{n_e}_{d}_sk_{d_s}_{t_s}.mps"
+                        )
+                    else:
+                        scip.setParam("limits/time", time_limit)
+                        scip.optimize()
+                        auto_data.append(
+                            [
+                                p_t,
+                                "sklearn",
+                                n_e,
+                                d,
+                                scip.getStatus(),
+                                scip.getSolvingTime(),
+                                scip.getNTotalNodes(),
+                            ]
+                        )
 
-summarised_tree_results = []
-for i, test_arguments in enumerate(tree_planting_runs):
-    seed = test_arguments[0]
-    predictor_type = test_arguments[1]
-    max_depth = test_arguments[2]
-    n_grid_size = test_arguments[3]
-    min_trees = test_arguments[4]
-    max_sterilise = test_arguments[5]
-    costs = test_arguments[6]
-    max_budget = test_arguments[7]
-    scip = build_and_optimise_tree_planting(
-        seed=seed,
-        predictor_type=predictor_type,
-        max_depth=max_depth,
-        n_grid_size=n_grid_size,
-        min_trees=min_trees,
-        max_sterilise=max_sterilise,
-        costs=costs,
-        max_budget=max_budget,
-        build_only=True,
-    )
-    scip.writeProblem(f"tests/data/instances/tree_{i}.mps")
-    summarised_tree_results.append(
-        (i, scip.getStatus(), scip.getSolvingTime(), scip.getNTotalNodes())
-    )
+        # Generate adversarial attack instances
+        adversarial_data = []
+        for n_p in [14, 16, 18]:
+            for formulation in ["bigm", "sos"]:
+                for n_e, d in [(3, 16), (3, 32), (4, 16), (4, 32)]:
+                    if generate_adversarial:
+                        scip = build_and_optimise_adversarial_mnist_torch(
+                            data_seed=d_s,
+                            training_seed=t_s,
+                            n_pixel_1d=n_p,
+                            layer_size=d,
+                            n_layers=n_e,
+                            test=False,
+                            formulation=formulation,
+                            build_only=True,
+                        )
+                        if write_only:
+                            scip.writeProblem(
+                                f"tests/surrogatelib/adversarial_{n_p}_mlp-{formulation}_{n_e}_{d}_torch_{d_s}_{t_s}.mps"
+                            )
+                        else:
+                            scip.setParam("limits/time", time_limit)
+                            scip.optimize()
+                            adversarial_data.append(
+                                [
+                                    n_p,
+                                    formulation,
+                                    "torch",
+                                    n_e,
+                                    d,
+                                    scip.getStatus(),
+                                    scip.getSolvingTime(),
+                                    scip.getNTotalNodes(),
+                                ]
+                            )
 
-print(summarised_tree_results)
+        # Generate palatable diet problem instances
+        palatable_data = []
+        # Ensemble tree instances
+        for n_e, d in [(10, 6), (11, 6), (12, 6)]:
+            if generate_diet:
+                scip = build_and_optimise_palatable_diet(
+                    training_seed=t_s,
+                    data_seed=d_s,
+                    framework="sklearn",
+                    n_estimators_or_layers=n_e,
+                    layer_sizes_or_depth=d,
+                    mlp_gbdt_svm="gbdt",
+                    build_only=True,
+                )
+                if write_only:
+                    scip.writeProblem(
+                        f"tests/surrogatelib/palatable_gbdt_{n_e}_{d}_sk_{d_s}_{t_s}.mps"
+                    )
+                else:
+                    scip.setParam("limits/time", time_limit)
+                    scip.optimize()
+                    palatable_data.append(
+                        [
+                            "gbdt",
+                            "sklearn",
+                            n_e,
+                            d,
+                            scip.getStatus(),
+                            scip.getSolvingTime(),
+                            scip.getNTotalNodes(),
+                        ]
+                    )
 
-function_approximation_runs = [
-    (42, 5, 1000, "sklearn", (20, 55, 15)),
-    (43, 6, 1000, "sklearn", (30, 40, 25)),
-    (44, 7, 1000, "sklearn", (15, 50, 10)),
-    (46, 9, 1000, "sklearn", (20, 15, 15)),
-    (47, 8, 1000, "torch", (35, 55, 35)),
-]
+        # Generate workload dispatching instances
+        workload_data = []
+        for n_e, d in [(13, 3), (14, 3), (15, 3)]:
+            if generate_workload:
+                scip = build_and_optimise_workload_dispatching(
+                    training_seed=t_s,
+                    data_seed=d_s,
+                    framework="sklearn",
+                    nn_or_gbdt="gbdt",
+                    num_layers_or_estimators=n_e,
+                    layer_size_or_depth=d,
+                    build_only=True,
+                )
+                if write_only:
+                    scip.writeProblem(
+                        f"tests/surrogatelib/workload_gbdt_{n_e}_{d}_sk_{d_s}_{t_s}.mps"
+                    )
+                else:
+                    scip.setParam("limits/time", time_limit)
+                    scip.optimize()
+                    workload_data.append(
+                        [
+                            "gbdt",
+                            "sklearn",
+                            n_e,
+                            d,
+                            scip.getStatus(),
+                            scip.getSolvingTime(),
+                            scip.getNTotalNodes(),
+                        ]
+                    )
 
-summarised_function_approximation_results = []
-for i, test_arguments in enumerate(function_approximation_runs):
-    seed = test_arguments[0]
-    n_inputs = test_arguments[1]
-    n_samples = test_arguments[2]
-    sklearn_or_torch = test_arguments[3]
-    layer_sizes = test_arguments[4]
-    scip = build_and_optimise_function_approximation_model(
-        seed=seed,
-        n_inputs=n_inputs,
-        n_samples=n_samples,
-        sklearn_or_torch=sklearn_or_torch,
-        layers_sizes=layer_sizes,
-        build_only=True,
-    )
-    scip.writeProblem(f"tests/data/instances/functionapprox_{i}.mps")
-    summarised_function_approximation_results.append(
-        (i, scip.getStatus(), scip.getSolvingTime(), scip.getNTotalNodes())
-    )
-
-print(summarised_function_approximation_results)
-
-
-city_manager_runs = [
-    (42, 5, 60, 5, 0.0001),
-    (43, 6, 60, 4, 0.0001),
-    (44, 7, 50, 5, 0.0001),
-    (45, 6, 55, 3, 0.0001),
-    (46, 5, 65, 4, 0.0001),
-    (47, 7, 25, 3, 0.0001),
-]
-
-summarised_city_manager_results = []
-for i, test_arguments in enumerate(city_manager_runs):
-    seed = test_arguments[0]
-    max_depth = test_arguments[1]
-    n_apartments = test_arguments[2]
-    grid_length = test_arguments[3]
-    epsilon = test_arguments[4]
-    scip = build_and_optimise_city_manager(
-        seed=seed,
-        max_depth=max_depth,
-        n_apartments=n_apartments,
-        grid_length=grid_length,
-        epsilon=epsilon,
-        build_only=True,
-    )
-    scip.writeProblem(f"tests/data/instances/city_{i}.mps")
-    summarised_city_manager_results.append(
-        (i, scip.getStatus(), scip.getSolvingTime(), scip.getNTotalNodes())
-    )
-
-print(summarised_city_manager_results)
-
-auto_manufacturer_runs = [
-    (0, "gbdt", 10, 6, 10, 0.8),
-    (1, "gbdt", 6, 6, 40, 0.8),
-    (2, "gbdt", 6, 10, 20, 0.5),
-    (3, "gbdt", 6, 6, 5, 0.9),
-    (4, "gbdt", 5, 15, 40, 0.2),
-    (5, "rf", 6, 6, 40, 0.8),
-    (6, "rf", 6, 10, 40, 0.8),
-    (7, "rf", 6, 10, 20, 0.5),
-    (8, "rf", 6, 6, 10, 0.9),
-    (9, "rf", 5, 15, 40, 0.2),
-]
-
-summarised_auto_results = []
-for i, test_arguments in enumerate(auto_manufacturer_runs):
-    seed = test_arguments[0]
-    gbdt_or_rf = test_arguments[1]
-    max_depth = test_arguments[2]
-    n_estimators = test_arguments[3]
-    min_fuel_efficiency = test_arguments[4]
-    min_resale_ratio = test_arguments[5]
-    scip = build_and_optimise_auto_manufacturer(
-        seed=seed,
-        gbdt_or_rf=gbdt_or_rf,
-        max_depth=max_depth,
-        n_estimators=n_estimators,
-        min_fuel_efficiency=min_fuel_efficiency,
-        min_resale_ratio=min_resale_ratio,
-        build_only=True,
-    )
-    scip.writeProblem(f"tests/data/instances/auto_{i}.mps")
-    summarised_auto_results.append(
-        (i, scip.getStatus(), scip.getSolvingTime(), scip.getNTotalNodes())
-    )
-
-print(summarised_auto_results)
-
-adversarial_example_runs = [
-    (40, 16, (60, 20), 8000),
-    (41, 16, (60, 40), 10000),
-    (42, 16, (80, 40), 8000),
-    (43, 16, (40, 20), 10000),
-    (44, 32, (20, 10), 10000),
-    (45, 32, (40, 20), 10000),
-    (46, 32, (60, 40), 10000),
-    (47, 32, (30, 30), 25000),
-    (48, 32, (80, 40), 6000),
-    (49, 64, (20, 10), 10000),
-]
-
-summarised_adversarial_results = []
-for i, test_arguments in enumerate(adversarial_example_runs):
-    seed = test_arguments[0]
-    n_pixel_1d = test_arguments[1]
-    layer_sizes = test_arguments[2]
-    image_number = test_arguments[3]
-    scip = build_and_optimise_adversarial_mnist_torch(
-        seed=seed,
-        n_pixel_1d=n_pixel_1d,
-        layer_sizes=layer_sizes,
-        image_number=image_number,
-        test=False,
-        build_only=True,
-    )
-    scip.writeProblem(f"tests/data/instances/adversarial_{i}.mps")
-    summarised_adversarial_results.append(
-        (i, scip.getStatus(), scip.getSolvingTime(), scip.getNTotalNodes())
-    )
-
-print(summarised_adversarial_results)
+if not write_only:
+    for generator_param, generator_data, generator_key in [
+        (generate_wine, wine_data, "wine"),
+        (generate_water, water_data, "water"),
+        (generate_workload, workload_data, "workload"),
+        (generate_function, function_data, "function"),
+        (generate_diet, palatable_data, "diet"),
+        (generate_adversarial, adversarial_data, "adversarial"),
+        (generate_auto, auto_data, "auto"),
+        (generate_tree, tree_data, "tree"),
+        (generate_city, city_data, "city"),
+    ]:
+        if generator_param:
+            print(f"{generator_key}: {generator_data}", flush=True)

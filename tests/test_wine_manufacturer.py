@@ -116,7 +116,7 @@ def build_and_optimise_wine_manufacturer(
             ).fit(X, quality)
         else:
             reg = train_torch_neural_network(
-                X, quality, n_estimators_layers, layer_size, training_seed
+                X, quality, n_estimators_layers, layer_size, training_seed, reshape=True
             )
     elif framework == "sklearn":
         if gbdt_rf_or_mlp == "rf":
