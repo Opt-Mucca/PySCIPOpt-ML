@@ -127,3 +127,9 @@ If this software was used for academic purposes, please cite our paper with the 
   year={2023}
 }
 ```
+
+## Funding Acknowledgements
+
+The work for this article has been conducted in the Research Campus MODAL
+funded by the German Federal Ministry of Education and Research (BMBF)
+(fund numbers 05M14ZAM, 05M20ZBM).
