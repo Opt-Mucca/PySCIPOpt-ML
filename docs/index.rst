@@ -36,6 +36,7 @@ Helpful Information
 
    example_basic
    example_advanced
+   surrogatelib
 
 .. toctree::
    :maxdepth: 2
