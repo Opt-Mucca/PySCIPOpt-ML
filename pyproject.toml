@@ -12,7 +12,7 @@ authors = [
 
 dependencies = [
   "numpy",
-  "pyscipopt==5.0.0"
+  "pyscipopt>=5.0.1"
 ]
 
 [project.urls]
