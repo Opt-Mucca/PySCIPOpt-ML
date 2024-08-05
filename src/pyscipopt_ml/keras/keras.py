@@ -1,4 +1,5 @@
 """Module for formulating a `keras.Model <https://keras.io/api/models/model/>` into a PySCIPOpt Model."""
+
 import pdb
 
 import numpy as np
@@ -58,8 +59,8 @@ def add_keras_constr(
 
     Warnings
     --------
-    Only `Dense <https://keras.io/api/layers/core_layers/dense/>`_ (with `relu / tanh / sigmoid` activation)
-    are supported.
+    Only `Dense <https://keras.io/api/layers/core_layers/dense/>`_
+    (with `relu / tanh / sigmoid / softplus / softmax` activation) are supported.
 
     Notes
     -----
@@ -112,7 +113,7 @@ class KerasNetworkConstr(BaseNNConstr):
             if isinstance(step, keras.layers.Dense):
                 config = step.get_config()
                 activation = config["activation"]
-                if activation not in ("relu", "linear", "sigmoid", "tanh"):
+                if activation not in ("relu", "linear", "sigmoid", "tanh", "softplus", "softmax"):
                     raise NoModel(predictor, f"Unsupported activation {activation}")
                 out_features = step.units
             elif isinstance(step, keras.layers.ReLU):
@@ -126,7 +127,7 @@ class KerasNetworkConstr(BaseNNConstr):
                 pass
             elif isinstance(step, keras.layers.Activation):
                 activation = step.get_config()["activation"]
-                if activation in ["sigmoid", "relu", "tanh"]:
+                if activation in ["sigmoid", "relu", "tanh", "softplus", "softmax"]:
                     pass
                 else:
                     raise NoModel(predictor, f"Unsupported activation {activation}")

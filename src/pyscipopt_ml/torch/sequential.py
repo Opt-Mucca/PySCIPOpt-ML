@@ -60,8 +60,10 @@ def add_sequential_constr(
     -------
     Only :external+torch:py:class:`torch.nn.Linear`,
     :external+torch:py:class:`torch.nn.ReLU`,
-    :external+torch:py:class:`torch.nn.Sigmoid`, and
-    :external+torch:py:class:`torch.nn.Tanh` layers are supported.
+    :external+torch:py:class:`torch.nn.Sigmoid`,
+    :external+torch:py:class:`torch.nn.Tanh`,
+    :external+torch:py:class:`torch.nn.Softmax`, and
+    :external+torch:py:class:`torch.nn.Softplus` layers are supported.
 
     Note
     ----
@@ -118,6 +120,10 @@ class SequentialConstr(BaseNNConstr):
                 pass
             elif isinstance(step, nn.Flatten):
                 pass
+            elif isinstance(step, nn.Softmax):
+                pass
+            elif isinstance(step, nn.Softplus):
+                pass
             elif isinstance(step, nn.Linear):
                 out_features = step.out_features
                 pass
@@ -151,11 +157,17 @@ class SequentialConstr(BaseNNConstr):
                 isinstance(step, nn.ReLU)
                 or isinstance(step, nn.Sigmoid)
                 or isinstance(step, nn.Tanh)
+                or isinstance(step, nn.Softmax)
+                or isinstance(step, nn.Softplus)
             ) and (i < num_layers - 1 or self.output_type == "regression"):
                 if isinstance(step, nn.ReLU):
                     activation = "relu"
                 elif isinstance(step, nn.Sigmoid):
                     activation = "logistic"
+                elif isinstance(step, nn.Softmax):
+                    activation = "softmax"
+                elif isinstance(step, nn.Softplus):
+                    activation = "softplus"
                 else:
                     activation = "tanh"
                 if i < num_layers - 1:

@@ -1,6 +1,7 @@
 """Internal module to make MIP modeling of activation functions."""
+
 import numpy as np
-from pyscipopt import exp, quicksum
+from pyscipopt import exp, log, quicksum
 
 
 def add_identity_activation_constraint_layer(layer, max_bound):
@@ -257,6 +258,109 @@ def add_tanh_activation_constraint_layer(layer, activation_only=True):
             )
 
     return tanh_cons
+
+
+def add_softmax_activation_constraint_layer(layer, activation_only=True):
+    """
+    MIP model for softmax activation on a layer
+
+    Parameters
+    ----------
+    layer : AbstractNNLayer
+        Layer to which activation is applied.
+
+    activation_only : bool, optional
+        Whether this layer should only feature as an activation layer, i.e., skip the affine transformation
+
+    Returns
+    -------
+
+    softmax_cons : np.ndarray
+        A numpy array containing added constraints
+
+    """
+
+    # Initialise values for easy access and create empty constraint arrays
+    n_samples = layer.input.shape[0]
+    n_nodes_left = layer.input.shape[-1]
+    n_nodes_right = layer.output.shape[-1]
+    softmax_cons = np.zeros((n_samples, n_nodes_right), dtype=object)
+
+    # Iterate over all nodes on the right hand side and create the appropriate constraints
+    for i in range(n_samples):
+        sum_exp_expr = 0
+        for j in range(n_nodes_right):
+            if activation_only:
+                sum_exp_expr += exp(layer.input[i][j])
+            else:
+                sum_exp_expr += exp(
+                    quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left))
+                    + layer.intercept[j]
+                )
+        for j in range(n_nodes_right):
+            if layer.output[i][j].getLbOriginal() < 0:
+                layer.scip_model.chgVarLb(layer.output[i][j], 0)
+            if layer.output[i][j].getUbOriginal() > 1:
+                layer.scip_model.chgVarUb(layer.output[i][j], 1)
+            if activation_only:
+                x = layer.input[i][j]
+            else:
+                x = (
+                    quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left))
+                    + layer.intercept[j]
+                )
+            name = layer.unique_naming_prefix + f"softmax_{i}_{j}"
+            softmax_cons[i][j] = layer.scip_model.addCons(
+                layer.output[i][j] == exp(x) / sum_exp_expr, name=name
+            )
+
+    return softmax_cons
+
+
+def add_softplus_activation_constraint_layer(layer, activation_only=True):
+    """
+    MIP model for softplus activation on a layer
+
+    Parameters
+    ----------
+    layer : AbstractNNLayer
+        Layer to which activation is applied.
+
+    activation_only : bool, optional
+        Whether this layer should only feature as an activation layer, i.e., skip the affine transformation
+
+    Returns
+    -------
+
+    softplus_cons : np.ndarray
+        A numpy array containing added constraints
+
+    """
+
+    # Initialise values for easy access and create empty constraint arrays
+    n_samples = layer.input.shape[0]
+    n_nodes_left = layer.input.shape[-1]
+    n_nodes_right = layer.output.shape[-1]
+    softplus_cons = np.zeros((n_samples, n_nodes_right), dtype=object)
+
+    # Iterate over all nodes on the right hand side and create the appropriate constraints
+    for i in range(n_samples):
+        for j in range(n_nodes_right):
+            if layer.output[i][j].getLbOriginal() < 0:
+                layer.scip_model.chgVarLb(layer.output[i][j], 0)
+            if activation_only:
+                x = layer.input[i][j]
+            else:
+                x = (
+                    quicksum(layer.coefs[k][j] * layer.input[i][k] for k in range(n_nodes_left))
+                    + layer.intercept[j]
+                )
+            name = layer.unique_naming_prefix + f"softplus_{i}_{j}"
+            softplus_cons[i][j] = layer.scip_model.addCons(
+                layer.output[i][j] == log(1 + exp(x)), name=name
+            )
+
+    return softplus_cons
 
 
 def propagate_identity_bounds(

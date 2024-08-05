@@ -132,6 +132,8 @@ Currently, only five types of layers are supported:
    * :external+torch:py:class:`ReLU layers <torch.nn.ReLU>`,
    * :external+torch:py:class:`Sigmoid layers <torch.nn.Sigmoid>`,
    * :external+torch:py:class:`Tanh layers <torch.nn.Tanh>`
+   * :external+torch:py:class:`Softmax layers <torch.nn.Softmax>`
+   * :external+torch:py:class:`Softplus layers <torch.nn.Softplus>`
 
 In the case of the final layer being an activation function used for classification, e.g.
 :external+torch:py:class:`Softmax <torch.nn.Softmax>`, simply set

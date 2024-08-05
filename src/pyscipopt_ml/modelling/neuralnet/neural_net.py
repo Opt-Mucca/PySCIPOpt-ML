@@ -5,6 +5,8 @@ from .activations import (
     add_identity_activation_constraint_layer,
     add_relu_activation_constraint_layer,
     add_sigmoid_activation_constraint_layer,
+    add_softmax_activation_constraint_layer,
+    add_softplus_activation_constraint_layer,
     add_tanh_activation_constraint_layer,
 )
 from .layers import ActivationLayer, DenseLayer
@@ -22,6 +24,8 @@ class BaseNNConstr(AbstractPredictorConstr):
             "identity": add_identity_activation_constraint_layer,
             "tanh": add_tanh_activation_constraint_layer,
             "logistic": add_sigmoid_activation_constraint_layer,
+            "softmax": add_softmax_activation_constraint_layer,
+            "softplus": add_softplus_activation_constraint_layer,
         }
         self._layers = []
 

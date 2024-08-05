@@ -7,6 +7,8 @@ from .activations import (
     add_identity_activation_constraint_layer,
     add_relu_activation_constraint_layer,
     add_sigmoid_activation_constraint_layer,
+    add_softmax_activation_constraint_layer,
+    add_softplus_activation_constraint_layer,
     add_tanh_activation_constraint_layer,
 )
 
@@ -78,6 +80,16 @@ class AbstractNNLayer(AbstractPredictorConstr):
         elif self.activation == "tanh":
             tanh_cons = add_tanh_activation_constraint_layer(self, activation_only=activation_only)
             self._created_cons.append(tanh_cons)
+        elif self.activation == "softmax":
+            softmax_cons = add_softmax_activation_constraint_layer(
+                self, activation_only=activation_only
+            )
+            self._created_cons.append(softmax_cons)
+        elif self.activation == "softplus":
+            softplus_cons = add_softplus_activation_constraint_layer(
+                self, activation_only=activation_only
+            )
+            self._created_cons.append(softplus_cons)
         elif self.activation == "identity" and not activation_only:
             max_bound = self.scip_model.infinity() if self.formulation == "bigm" else 10**5
             affine_cons = add_identity_activation_constraint_layer(self, max_bound)

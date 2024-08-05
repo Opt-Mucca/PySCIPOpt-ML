@@ -193,6 +193,18 @@ For dense layers with a Tanh activation function the formulation is:
 
     y_j = \frac{1 - e^{-2(\sum_{i=1}^n \beta_{i,j} x_i + \beta_{0,j})}}{1 + e^{-2(\sum_{i=1}^n \beta_{i,j} x_i + \beta_{0,j})}} \quad \forall j
 
+For dense layers with a Softmax activation function the formulation is:
+
+.. math::
+
+   y_j = \frac{e^{\sum_{i=1}^n \beta_{i,j} x_i + \beta_{0,j}}}{\sum_{j'}e^{\sum_{i=1}^n \beta_{i,j'} x_i + \beta_{0,j'}}} \quad \forall j
+
+For dense layers with a Softplus activation function the formulation is:
+
+.. math::
+
+   y_j = \log (1 + e^{\sum_{i=1}^n \beta_{i,j} x_i + \beta_{0,j}}) \quad \forall j
+
 As the maximum is preserved over all these activation functions, and other activation functions
 such as Softmax, the inserted predictor constraint for classification purposes does not explicitly
 model the final activation layer. In such a case the formulation used is:
