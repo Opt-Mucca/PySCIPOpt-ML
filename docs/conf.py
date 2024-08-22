@@ -67,6 +67,7 @@ intersphinx_mapping = {
     "torch": ("https://pytorch.org/docs/master/", None),
     "xgb": ("https://xgboost.readthedocs.io/en/stable/", None),
     "lgb": ("https://lightgbm.readthedocs.io/en/stable/", None),
+    "onnx": ("https://onnx.ai/onnx/", None),
 }
 
 extlinks = {

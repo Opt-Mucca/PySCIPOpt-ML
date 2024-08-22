@@ -67,7 +67,7 @@ def add_onnx_constr(
     Warning
     -------
     Only MatMul, Gemm, Relu, Sigmoid, Tanh, Softmax, and Softplus operator types are supported.
-    Add, Cast, and Reshape are also often possible, although not in an arbitrary contexts.
+    Add, Cast, and Reshape are also often possible, although not in arbitrary contexts.
 
     Note
     ----
@@ -86,7 +86,8 @@ def add_onnx_constr(
 
 
 class ONNXConstr(BaseNNConstr):
-    """Transform an ONNX ModelProto that represents a fully connected feed forward neural network
+    """
+    Transform an ONNX ModelProto that represents a fully connected feed forward neural network
      to SCIP constraints with input and output as matrices of variables.
 
     |ClassShort|.

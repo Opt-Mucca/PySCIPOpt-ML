@@ -13,7 +13,7 @@ The package currently supports various `scikit-learn
 <https://scikit-learn.org/stable/>`_ objects. It can also embed
 gradient boosting regression models from `XGBoost <https://xgboost.readthedocs.io/en/stable/>`_, and
 `LightGBM <https://lightgbm.readthedocs.io/en/stable/>`_. Finally, it supports Sequential Neural Networks from
-`PyTorch <https://pytorch.org/docs/master/>`_ and `Keras <https://keras.io/api/>`_.
+`PyTorch <https://pytorch.org/docs/master/>`_, `Keras <https://keras.io/api/>`_, and `ONNX <https://onnx.ai/>`_.
 
 The package is actively developed and users are encouraged to raise an issue on
 `GitHub <https://github.com/Opt-Mucca/PySCIPOpt-ML/issues>`_ if there are ML
@@ -62,6 +62,7 @@ We encourage to install the package via pip (or add it to your
     * - :pypi:`scikit-learn`
     * - :pypi:`lightgbm`
     * - :pypi:`xgboost`
+    * - :pypi:`onnx`
 
   Installing any of the machine learning packages is only required if the
   predictor you want to insert uses them (i.e. to insert a Scikit-Learn based predictor
