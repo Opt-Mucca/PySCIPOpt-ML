@@ -1,4 +1,5 @@
 """Bases classes for modeling neural network layers."""
+import numpy as np
 
 from ...exceptions import ParameterError
 from ..base_predictor_constraint import AbstractPredictorConstr
@@ -172,4 +173,5 @@ class DenseLayer(AbstractNNLayer):
         return output_vars
 
     def _mip_model(self, **kwargs):
+        self.intercept = np.array(self.intercept).reshape(-1)
         self._layer_mip_model(activation_only=False, **kwargs)

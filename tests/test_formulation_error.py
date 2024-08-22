@@ -1,4 +1,5 @@
 import numpy as np
+import onnx
 import pytest
 from lightgbm import LGBMClassifier, LGBMRegressor
 from pyscipopt import Model
@@ -86,7 +87,9 @@ def train_embed_and_optimise(predictor, multi_dimension, classification, n_sampl
         if classification and multi_dimension:
             predictor.add(keras.layers.Activation(keras.activations.softmax))
         predictor.compile(optimizer="adam", loss="mse")
-    if not isinstance(predictor, ClusterMixin):
+    if isinstance(predictor, onnx.ModelProto):
+        pass
+    elif not isinstance(predictor, ClusterMixin):
         if isinstance(predictor, MultiOutputClassifier) or (
             isinstance(predictor, keras.Model) and multi_dimension and classification
         ):
@@ -112,7 +115,9 @@ def train_embed_and_optimise(predictor, multi_dimension, classification, n_sampl
             output_vars[i][j] = scip.addVar(name=f"y_{i}_{j}", vtype="C", lb=None)
 
     # Embed the trained model
-    if isinstance(predictor, keras.Model) and classification:
+    if (
+        isinstance(predictor, keras.Model) or isinstance(predictor, onnx.ModelProto)
+    ) and classification:
         pred_cons = add_predictor_constr(
             scip, predictor, input_vars, output_vars, output_type="classification"
         )
@@ -152,8 +157,11 @@ testdata = [
     (RandomForestRegressor(max_depth=4, n_estimators=4), True, False),
     (RandomForestClassifier(max_depth=4, n_estimators=4), True, True),
     (RandomForestClassifier(max_depth=4, n_estimators=4), False, True),
+    (onnx.load("./tests/data/sk_3_42_0_0_relu.onnx"), False, False),
     (MLPRegressor((10, 10, 10), "relu"), False, False),
+    (onnx.load("./tests/data/sk_3_42_1_0_logistic.onnx"), True, False),
     (MLPRegressor((10, 10, 10), "logistic"), True, False),
+    (onnx.load("./tests/data/sk_3_42_1_0_tanh.onnx"), True, False),
     (MLPRegressor((10, 10, 10), "tanh"), True, False),
     (MLPClassifier((10, 10, 10), "relu"), False, True),
     (MLPClassifier((10, 10, 10), "relu"), True, True),
@@ -173,6 +181,8 @@ testdata = [
     (LGBMClassifier(max_depth=4, n_estimators=4), False, True),
     (keras.Model(), True, False),
     (keras.Model(), True, True),
+    (onnx.load("./tests/data/keras_3_42_1_0.onnx"), True, False),
+    (onnx.load("./tests/data/keras_3_42_1_1.onnx"), True, True),
     (KMeans(n_clusters=3, n_init="auto"), True, True),
     (KMeans(n_clusters=2, n_init="auto"), False, True),
     (MiniBatchKMeans(n_clusters=3, n_init="auto"), True, True),

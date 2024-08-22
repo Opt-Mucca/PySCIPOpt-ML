@@ -66,7 +66,11 @@ class AbstractPredictorConstr(ABC):
             input_vars = input_vars.reshape((input_vars.shape[0], -1))
 
         # Ensure that the input variable dimensions match that of the predictor
-        if hasattr(self, "input_size") and input_vars.shape[-1] != self.input_size:
+        if (
+            hasattr(self, "input_size")
+            and self.input_size is not None
+            and input_vars.shape[-1] != self.input_size
+        ):
             raise ParameterError(
                 f"Input variables dimension don't conform with predictor {type(self)} "
                 + f"Input variable dimensions: {input_vars.shape[-1]} != {self.input_size}"
@@ -86,7 +90,11 @@ class AbstractPredictorConstr(ABC):
                     output_vars = output_vars.reshape((-1, 1))
 
             # Ensure that the output variable dimensions match that of the predictor
-            if hasattr(self, "output_size") and output_vars.shape[-1] != self.output_size:
+            if (
+                hasattr(self, "output_size")
+                and self.output_size is not None
+                and output_vars.shape[-1] != self.output_size
+            ):
                 raise ParameterError(
                     f"Output variable dimensions don't conform with predictor {type(self)} "
                     + f"Output variable dimensions: {output_vars.shape[-1]} != {self.output_size}"
@@ -310,6 +318,3 @@ class AbstractPredictorConstr(ABC):
                 output_vals[i][j] = self.scip_model.getVal(self.output[i][j])
 
         return output_vals
-
-    def __str__(self):
-        return self._name
