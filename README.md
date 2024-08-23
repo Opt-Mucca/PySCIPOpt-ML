@@ -11,7 +11,7 @@ PySCIPOPT-ML allows users to easily optimise MIPs with embedded ML constraints.
 
 The package currently supports various ML objects from [Scikit-Learn](https://scikit-learn.org/stable/),
 [XGBoost](https://xgboost.readthedocs.io/en/stable/), [LightGBM](https://lightgbm.readthedocs.io/en/stable/),
-[PyTorch](https://pytorch.org/), and [Keras](https://keras.io/)
+[PyTorch](https://pytorch.org/), [Keras](https://keras.io/), and [ONNX](https://onnx.ai/).
 
 # Documentation
 
@@ -37,6 +37,7 @@ The current version supports the following ML packages:
 - [`scikit-learn`](https://pypi.org/project/scikit-learn)
 - [`XGBoost`](https://pypi.org/project/xgboost/)
 - [`LightGBM`](https://pypi.org/project/lightgbm/)
+- [`onnx`](https://pypi.org/project/onnx/)
 
 Installing these packages is only required if the predictor you want to insert uses them
 (i.e. to insert a XGBoost based predictor you need to have `xgboost` installed).
@@ -48,7 +49,7 @@ It is recommended to always install packages in a virtual environment:
 ```shell
 (venv) pip install pyscipopt-ml
 ```
-This will also install the `numpy`, `pyscipopt` dependencies.
+This will also install the `numpy` and `pyscipopt` dependencies.
 
 ## Installation from source
 
@@ -79,6 +80,8 @@ pip install torch
 pip install tensorflow
 pip install xgboost
 pip install lightgbm
+pip install onnx
+pip install onnxruntime
 pip install pre-commit
 pre-commit install
 ```

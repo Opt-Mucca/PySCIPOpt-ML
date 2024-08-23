@@ -8,3 +8,5 @@ torch==2.0.1
 lightgbm==4.1.0
 xgboost==2.0.2
 tensorflow==2.15.0
+onnx==1.16.2
+onnxruntime==1.19.0

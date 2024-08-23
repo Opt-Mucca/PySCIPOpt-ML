@@ -57,7 +57,7 @@ class BaseNNConstr(AbstractPredictorConstr):
             Intercept bias
         activation: str
             Type of activation used in layer
-        output_vars : None, optional
+        output_vars : np.ndarray or None, optional
             Output variables
         unique_naming_prefix : str, optional
             A unique naming prefix that is used before all variable and constraint names.

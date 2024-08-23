@@ -157,6 +157,19 @@ This support holds for the classification case when the final layer is an unsupp
 e.g. softmax. Please read the above explanation in the PyTorch section, and in such use cases set
 `output_type="classification"` when inserting the predictor constraint.
 
+ONNX
+----
+
+For ONNX we also support standard feed forward neural networks. These must be
+provided in the `ModelProto <https://onnx.ai/onnx/api/classes.html#modelproto>`_ format.
+
+They can be embedded in a SCIP model with the function
+:py:func:`pyscipopt_ml.onnx.add_onnx_constr`.
+
+The supported layer types and activation functions are the same as in torch and keras (see above).
+The classification trick for the final layer is not done for ONNX models, so be warned that there will
+be a performance difference for imported classification models.
+
 
 XGBoost
 -------

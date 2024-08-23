@@ -119,6 +119,21 @@ def keras_convertors():
     return {}
 
 
+def onnx_convertors():
+    """Collect known ONNX objects that can be formulated and the conversion class."""
+    if "onnx" in sys.modules:
+        import onnx  # pylint: disable=import-outside-toplevel
+
+        from .onnx import add_onnx_constr  # pylint: disable=import-outside-toplevel
+
+        return {
+            onnx.ModelProto: add_onnx_constr,
+            onnx.onnx_ml_pb2.ModelProto: add_onnx_constr,
+        }
+
+    return {}
+
+
 def registered_predictors():
     """Return the list of registered predictors."""
     convertors = {
@@ -127,5 +142,6 @@ def registered_predictors():
         **xgboost_convertors(),
         **lightgbm_convertors(),
         **keras_convertors(),
+        **onnx_convertors(),
     }
     return convertors
