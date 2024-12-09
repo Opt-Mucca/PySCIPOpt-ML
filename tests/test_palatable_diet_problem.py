@@ -125,7 +125,9 @@ def build_and_optimise_palatable_diet(
             )
     elif mlp_gbdt_svm == "gbdt":
         reg = GradientBoostingRegressor(
-            max_depth=5, n_estimators=n_estimators_or_layers, random_state=training_random_state
+            max_depth=layer_sizes_or_depth,
+            n_estimators=n_estimators_or_layers,
+            random_state=training_random_state,
         ).fit(x, y)
     elif mlp_gbdt_svm == "svm":
         reg = SVR(kernel="poly", degree=degree).fit(x, y)
