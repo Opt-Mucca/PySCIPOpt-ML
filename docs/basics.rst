@@ -19,6 +19,10 @@ The package is actively developed and users are encouraged to raise an issue on
 `GitHub <https://github.com/Opt-Mucca/PySCIPOpt-ML/issues>`_ if there are ML
 models that are currently available, or there are optimisation related problems with the created MIPs.
 
+.. image:: _static/pyscipoptml-flowchart.png
+    :width: 600
+    :alt: PySCIPOpt-ML flowchart
+
 Install
 *******
 

@@ -4,6 +4,10 @@ PySCIPOpt-ML
 PySCIPOpt-ML is a python interface to automatically formulate Machine Learning (ML) models into Mixed-Integer Programs (MIPs).
 PySCIPOPT-ML allows users to easily optimise MIPs with embedded ML constraints.
 
+.. image:: _static/pyscipoptml-flowchart.png
+    :width: 600
+    :alt: PySCIPOpt-ML flowchart
+
 Installation
 --------------------
 ``pyscipopt-ml`` can be installed from PyPI using ``pip``.

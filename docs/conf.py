@@ -64,7 +64,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
-    "torch": ("https://pytorch.org/docs/master/", None),
+    "torch": ("https://pytorch.org/docs/main/", None),
     "xgb": ("https://xgboost.readthedocs.io/en/stable/", None),
     "lgb": ("https://lightgbm.readthedocs.io/en/stable/", None),
     "onnx": ("https://onnx.ai/onnx/", None),

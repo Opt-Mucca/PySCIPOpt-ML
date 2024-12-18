@@ -2,7 +2,7 @@
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/pypi/v/pyscipopt-ml)](https://pypi.org/project/pyscipopt-ml)
 
-![](docs/_static/pyscipopt-ml-figure.png)
+![](docs/_static/pyscipoptml-summary.png)
 
 # PySCIPOpt-ML
 
@@ -12,6 +12,8 @@ PySCIPOPT-ML allows users to easily optimise MIPs with embedded ML constraints.
 The package currently supports various ML objects from [Scikit-Learn](https://scikit-learn.org/stable/),
 [XGBoost](https://xgboost.readthedocs.io/en/stable/), [LightGBM](https://lightgbm.readthedocs.io/en/stable/),
 [PyTorch](https://pytorch.org/), [Keras](https://keras.io/), and [ONNX](https://onnx.ai/).
+
+![](docs/_static/pyscipoptml-flowchart.png)
 
 # Documentation
 
