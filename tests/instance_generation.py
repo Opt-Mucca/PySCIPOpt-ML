@@ -323,6 +323,7 @@ for d_s in [0, 1]:
                         training_seed=t_s,
                         data_seed=d_s,
                         gbdt_rf_or_mlp="mlp",
+                        formulation=formulation,
                         framework="torch",
                         max_depth_or_layer_size=d,
                         n_estimators_or_layers=n_e,
