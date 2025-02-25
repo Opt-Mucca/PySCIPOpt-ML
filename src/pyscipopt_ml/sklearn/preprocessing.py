@@ -10,7 +10,6 @@ from pyscipopt import sqrt
 
 from ..exceptions import NoModel
 from ..modelling.classification import max_formulation
-from ..modelling.var_utils import create_vars
 from .skgetter import SKtransformer
 
 
@@ -274,39 +273,27 @@ class NormalizerConstr(SKtransformer):
                         pos_vars = False
                         break
         if not pos_vars:
-            pos_slack_vars = create_vars(
-                self.scip_model,
-                self.input.shape,
-                vtype="C",
-                lb=0,
-                name_prefix=self.unique_naming_prefix + "_pos",
+            pos_slack_vars = self.scip_model.addMatrixVar(
+                self.input.shape, vtype="C", lb=0, ub=None, name=self.unique_naming_prefix + "_pos"
             )
-            neg_slack_vars = create_vars(
-                self.scip_model,
-                self.input.shape,
-                vtype="C",
-                lb=0,
-                name_prefix=self.unique_naming_prefix + "_neg",
+            neg_slack_vars = self.scip_model.addMatrixVar(
+                self.input.shape, vtype="C", lb=0, ub=None, name=self.unique_naming_prefix + "_neg"
             )
-            dist_sum_cons = np.zeros(self.input.shape, dtype=object)
-            for i in range(n_samples):
-                for j in range(n_features):
-                    name = f"_dist_slack_{i}_{j}"
-                    dist_sum_cons[i][j] = self.scip_model.addCons(
-                        self.input[i][j] == pos_slack_vars[i][j] - neg_slack_vars[i][j],
-                        name=name,
-                    )
+            dist_sum_cons = self.scip_model.addMatrixCons(
+                self.input == pos_slack_vars - neg_slack_vars,
+                name=self.unique_naming_prefix + "_dist_slack",
+            )
             self._created_vars.append(pos_slack_vars)
             self._created_vars.append(neg_slack_vars)
             self._created_cons.append(dist_sum_cons)
         # If using max norm then need to get the max
         if norm == "max":
-            max_scale_vars = create_vars(
-                self.scip_model,
+            max_scale_vars = self.scip_model.addMatrixVar(
                 (n_samples, 1),
                 vtype="C",
                 lb=None,
-                name_prefix=self.unique_naming_prefix + "_max",
+                ub=None,
+                name=self.unique_naming_prefix + "_max",
             )
             input_vars = self.input if pos_vars else pos_slack_vars + neg_slack_vars
             max_form_vars, max_form_cons = max_formulation(

@@ -8,7 +8,6 @@ from tensorflow import keras
 from ..exceptions import NoModel, NoSolution
 from ..modelling.classification import argmax_bound_formulation
 from ..modelling.neuralnet import BaseNNConstr
-from ..modelling.var_utils import create_vars
 
 
 def add_keras_constr(
@@ -162,13 +161,12 @@ class KerasNetworkConstr(BaseNNConstr):
                 isinstance(step, keras.layers.ReLU) or isinstance(step, keras.layers.Activation)
             ) and (i < num_layers - 1 or self.output_type == "regression"):
                 if i < num_layers - 1:
-                    output = create_vars(
-                        self.scip_model,
+                    output = self.scip_model.addMatrixVar(
                         input_vars.shape,
                         vtype="C",
                         lb=None,
                         ub=None,
-                        name_prefix=self.unique_naming_prefix + f"layer_{i}",
+                        name=self.unique_naming_prefix + f"layer_{i}",
                     )
                     self._created_vars.append(output)
                 if isinstance(step, keras.layers.ReLU):
@@ -194,13 +192,12 @@ class KerasNetworkConstr(BaseNNConstr):
                     activation = "identity"
                 weights, bias = step.get_weights()
                 if i < num_layers - 1:
-                    output = create_vars(
-                        self.scip_model,
+                    output = self.scip_model.addMatrixVar(
                         (input_vars.shape[0], weights.shape[-1]),
                         vtype="C",
                         lb=None,
                         ub=None,
-                        name_prefix=self.unique_naming_prefix + f"layer_{i}",
+                        name=self.unique_naming_prefix + f"layer_{i}",
                     )
                     self._created_vars.append(output)
                 unique_naming_prefix = self.unique_naming_prefix + f"{activation}_{i}_"

@@ -3,8 +3,6 @@
 import numpy as np
 from pyscipopt import quicksum
 
-from ..var_utils import create_vars
-
 
 def max_formulation(scip_model, _input, output, unique_naming_prefix):
     """
@@ -78,13 +76,11 @@ def max_formulation(scip_model, _input, output, unique_naming_prefix):
         return [], [output_equal_cons]
     else:
         # Create additional variables that are needed for the max formulation
-        name_prefix = unique_naming_prefix + "bin_max"
-        max_bin_vars = create_vars(
-            scip_model, shape=(n_samples, n_features), vtype="B", name_prefix=name_prefix
+        max_bin_vars = scip_model.addMatrixVar(
+            (n_samples, n_features), vtype="B", name=unique_naming_prefix + "_bin_max"
         )
-        name_prefix = unique_naming_prefix + "slack_max"
-        slack_vars = create_vars(
-            scip_model, shape=(n_samples, n_features), vtype="C", lb=0, name_prefix=name_prefix
+        slack_vars = scip_model.addMatrixVar(
+            (n_samples, n_features), vtype="C", lb=0, name=unique_naming_prefix + "_slack_max"
         )
 
         # Create additional constraints that are needed for the max formulation

@@ -7,7 +7,6 @@ from sklearn.base import is_classifier
 
 from ..exceptions import NoModel, NoSolution, ParameterError
 from ..modelling import AbstractPredictorConstr
-from ..modelling.var_utils import create_vars
 
 
 class XGBgetter(AbstractPredictorConstr):
@@ -93,9 +92,7 @@ class XGBgetter(AbstractPredictorConstr):
                 raise ParameterError("Uneven amount of estimators per output")
 
         shape = (n_samples, n_trees // outdim, outdim)
-        tree_vars = create_vars(
-            self.scip_model, shape=shape, vtype="C", lb=None, ub=None, name_prefix="tree"
-        )
+        tree_vars = self.scip_model.addMatrixVar(shape, vtype="C", lb=None, ub=None, name="tree")
 
         return trees, constant, tree_vars
 

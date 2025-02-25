@@ -9,7 +9,6 @@ from ...sklearn.decision_tree import (
 from ..base_predictor_constraint import AbstractPredictorConstr
 from ..classification.argmax_model import argmax_bound_formulation
 from ..decision_tree import leaf_formulation
-from ..var_utils import create_vars
 
 
 def aggregated_estimator_formulation(
@@ -321,9 +320,11 @@ def create_sklearn_tree_estimators(
     """
 
     # Create variables to represent the output of each decision tree (i.e. estimator)
-    shape = (n_samples, predictor.n_estimators, outdim)
-    tree_vars = create_vars(
-        scip_model, shape=shape, vtype="C", lb=None, name_prefix=unique_naming_prefix + "tree_var"
+    tree_vars = scip_model.addMatrixVar(
+        (n_samples, predictor.n_estimators, outdim),
+        vtype="C",
+        lb=None,
+        name=unique_naming_prefix + "_tree_var",
     )
 
     # Create each estimator. In the case of GBDT, there are (n_estimators, outdim) many estimators, while for RF

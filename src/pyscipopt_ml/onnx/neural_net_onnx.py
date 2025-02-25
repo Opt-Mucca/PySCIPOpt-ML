@@ -16,7 +16,6 @@ from onnx import numpy_helper
 from ..exceptions import NoModel, NoSolution, ParameterError
 from ..modelling.classification import argmax_bound_formulation
 from ..modelling.neuralnet import AbstractNNLayer, BaseNNConstr
-from ..modelling.var_utils import create_vars
 
 
 def add_onnx_constr(
@@ -478,14 +477,11 @@ class ONNXConstr(BaseNNConstr):
                 activation = maybe_node.op_type.lower()
                 next_nodes = maybe_next_nodes
 
-        output = create_vars(
-            self.scip_model,
+        output = self.scip_model.addMatrixVar(
             (input_vars.shape[0], weights.shape[-1]),
             vtype="C",
             lb=None,
-            ub=None,
-            name_prefix=self.unique_naming_prefix
-            + f"layer_{self.num_processed_nodes}_{node_name}_",
+            name=self.unique_naming_prefix + f"layer_{self.num_processed_nodes}_{node_name}",
         )
         self._created_vars.append(output)
         layer = self.add_dense_layer(

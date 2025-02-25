@@ -7,7 +7,6 @@ import numpy as np
 from ..exceptions import NoModel
 from ..modelling import AbstractPredictorConstr
 from ..modelling.classification import argmax_bound_formulation
-from ..modelling.var_utils import create_vars
 from .skgetter import SKgetter
 
 
@@ -114,24 +113,23 @@ class CentroidClusterConstr(SKgetter, AbstractPredictorConstr):
             n_clusters = self.predictor.cluster_centers_.shape[0]
 
         # Create additional variables for distance to eac cluster
-        dist_vars = create_vars(
-            self.scip_model,
-            shape=(n_samples, n_clusters),
+        dist_vars = self.scip_model.addMatrixVar(
+            (n_samples, n_clusters),
             vtype="C",
             lb=None,
             ub=None,
-            name_prefix=self.unique_naming_prefix + "dist_",
+            name=self.unique_naming_prefix + "dist",
         )
 
         # Create constraints that measure distance from each sample to each centroid
         dist_cons = np.zeros((n_samples, n_clusters), dtype=object)
         if self.formulation == "l1":
-            l1_dist_vars = create_vars(
-                self.scip_model,
-                shape=(n_samples, n_clusters, n_features, 2),
+            l1_dist_vars = self.scip_model.addMatrixVar(
+                (n_samples, n_clusters, n_features, 2),
                 vtype="C",
                 lb=0,
-                name_prefix=self.unique_naming_prefix + "l1_dist_",
+                ub=None,
+                name=self.unique_naming_prefix + "l1_dist",
             )
             l1_dist_cons = np.zeros((n_samples, n_clusters, n_features), dtype=object)
             l1_sos_cons = np.zeros((n_samples, n_clusters, n_features), dtype=object)
@@ -171,11 +169,8 @@ class CentroidClusterConstr(SKgetter, AbstractPredictorConstr):
 
         # Add argmax constraint for closest centroid (turn variables to negative for argmin)
         if n_clusters == 2:
-            dist_bin_vars = create_vars(
-                self.scip_model,
-                shape=(n_samples, n_clusters),
-                vtype="B",
-                name_prefix=self.unique_naming_prefix + "max_dist_",
+            dist_bin_vars = self.scip_model.addMatrixVar(
+                (n_samples, n_clusters), vtype="B", name=self.unique_naming_prefix + "max_dist"
             )
             argmax_vars, argmax_cons = argmax_bound_formulation(
                 self.scip_model, -dist_vars, dist_bin_vars, self.unique_naming_prefix

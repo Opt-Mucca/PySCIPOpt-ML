@@ -3,8 +3,6 @@
 import numpy as np
 from pyscipopt import quicksum
 
-from ..var_utils import create_vars
-
 
 def argmax_bound_formulation(scip_model, _input, output, unique_naming_prefix, one_dim_center=0.5):
     """
@@ -68,8 +66,9 @@ def argmax_bound_formulation(scip_model, _input, output, unique_naming_prefix, o
 
     # Separate the formulation into cases
     if outdim == 1:
-        name_prefix = unique_naming_prefix + "argmax"
-        bin_vars = create_vars(scip_model, shape=(n_samples,), vtype="B", name_prefix=name_prefix)
+        bin_vars = scip_model.addMatrixVar(
+            (n_samples,), vtype="B", name=unique_naming_prefix + "_argmax"
+        )
 
         # Create additional constraints
         output_equal_cons = np.zeros((n_samples,), dtype=object)
@@ -93,9 +92,8 @@ def argmax_bound_formulation(scip_model, _input, output, unique_naming_prefix, o
 
     elif outdim == 2:
         # Create additional variables
-        name_prefix = unique_naming_prefix + "argmax"
-        max_bin_vars = create_vars(
-            scip_model, shape=(n_samples, outdim), vtype="B", name_prefix=name_prefix
+        max_bin_vars = scip_model.addMatrixVar(
+            (n_samples, outdim), vtype="B", name=unique_naming_prefix + "_argmax"
         )
 
         # Create additional constraints
@@ -128,17 +126,14 @@ def argmax_bound_formulation(scip_model, _input, output, unique_naming_prefix, o
         return [max_bin_vars], [output_equal_cons, indicator_cons, sum_bin_cons]
     else:
         # Create additional variables that are needed for classification
-        name_prefix = unique_naming_prefix + "argmax"
-        max_bin_vars = create_vars(
-            scip_model, shape=(n_samples, outdim), vtype="B", name_prefix=name_prefix
+        max_bin_vars = scip_model.addMatrixVar(
+            (n_samples, outdim), vtype="B", name=unique_naming_prefix + "_argmax"
         )
-        name_prefix = unique_naming_prefix + "slack_argmax"
-        slack_vars = create_vars(
-            scip_model, shape=(n_samples, outdim), vtype="C", lb=0, name_prefix=name_prefix
+        slack_vars = scip_model.addMatrixVar(
+            (n_samples, outdim), vtype="C", lb=0, name=unique_naming_prefix + "_slack_argmax"
         )
-        name_prefix = unique_naming_prefix + "max_val"
-        max_val_vars = create_vars(
-            scip_model, shape=(n_samples,), vtype="C", lb=None, ub=None, name_prefix=name_prefix
+        max_val_vars = scip_model.addMatrixVar(
+            (n_samples,), vtype="C", lb=None, ub=None, name=unique_naming_prefix + "_max_val"
         )
 
         # Create additional constraints that are needed for classification

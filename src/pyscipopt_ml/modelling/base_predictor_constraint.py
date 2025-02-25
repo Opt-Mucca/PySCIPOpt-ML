@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-from pyscipopt.scip import Constraint, Variable
+from pyscipopt.scip import Constraint, MatrixVariable, Variable
 
 from ..exceptions import NoSolution, ParameterError
-from .var_utils import create_vars
 
 
 class AbstractPredictorConstr(ABC):
@@ -43,21 +42,25 @@ class AbstractPredictorConstr(ABC):
         """Validate input and output variables (check shapes, reshape if needed)."""
 
         # Ensure the correct type of input and output is given
-        if type(input_vars) not in [list, np.ndarray]:
+        if type(input_vars) not in [list, np.ndarray, MatrixVariable]:
             raise ParameterError(
                 f"Input variables are not type list or np.ndarray. They are type {type(input_vars)}."
             )
         if output_vars is not None:
-            if not isinstance(output_vars, list) and not isinstance(output_vars, np.ndarray):
+            if type(output_vars) not in [list, np.ndarray, MatrixVariable]:
                 raise ParameterError(
                     f"Output variables are not type list or np.ndarray. They are type {type(output_vars)}."
                 )
 
         # Transform the type list to type np.ndarray
         if isinstance(input_vars, list):
-            input_vars = np.array(input_vars, dtype=object)
+            input_vars = np.array(input_vars, dtype=object).view(MatrixVariable)
+        elif not isinstance(input_vars, MatrixVariable):
+            input_vars = input_vars.view(MatrixVariable)
         if isinstance(output_vars, list):
-            output_vars = np.array(output_vars, dtype=object)
+            output_vars = np.array(output_vars, dtype=object).view(MatrixVariable)
+        elif output_vars is not None and not isinstance(output_vars, MatrixVariable):
+            output_vars = output_vars.view(MatrixVariable)
 
         # Change the dimension of the input variables if needed. (Always want number of data points first)
         if input_vars.ndim == 1:
@@ -210,13 +213,8 @@ class AbstractPredictorConstr(ABC):
                     vtype = "C"
             else:
                 vtype = "C"
-            output_vars = create_vars(
-                self.scip_model,
-                (input_vars.shape[0], self.output_size),
-                vtype,
-                lb=None,
-                ub=None,
-                name_prefix="out",
+            output_vars = self.scip_model.addMatrixVar(
+                (input_vars.shape[0], self.output_size), vtype=vtype, lb=None, ub=None, name="out"
             )
             return output_vars
         else:

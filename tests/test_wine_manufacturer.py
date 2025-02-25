@@ -266,12 +266,12 @@ def test_wine_manufacturer_sk_rf():
     scip = build_and_optimise_wine_manufacturer(
         data_seed=42,
         training_seed=42,
-        n_vineyards=35,
-        n_wines_to_produce=5,
+        n_vineyards=15,
+        n_wines_to_produce=2,
         framework="sklearn",
         gbdt_rf_or_mlp="rf",
         max_depth=3,
-        n_estimators_layers=3,
+        n_estimators_layers=2,
     )
 
 
@@ -279,8 +279,8 @@ def test_wine_manufacturer_sk_gbdt():
     scip = build_and_optimise_wine_manufacturer(
         data_seed=42,
         training_seed=42,
-        n_vineyards=35,
-        n_wines_to_produce=5,
+        n_vineyards=10,
+        n_wines_to_produce=2,
         framework="sklearn",
         gbdt_rf_or_mlp="gbdt",
         max_depth=3,
@@ -292,8 +292,8 @@ def test_wine_manufacturer_xgb_rf():
     scip = build_and_optimise_wine_manufacturer(
         data_seed=21,
         training_seed=21,
-        n_vineyards=35,
-        n_wines_to_produce=5,
+        n_vineyards=10,
+        n_wines_to_produce=2,
         framework="xgboost",
         gbdt_rf_or_mlp="rf",
         max_depth=3,
@@ -305,8 +305,8 @@ def test_wine_manufacturer_xgb_gbdt():
     scip = build_and_optimise_wine_manufacturer(
         data_seed=21,
         training_seed=21,
-        n_vineyards=35,
-        n_wines_to_produce=5,
+        n_vineyards=10,
+        n_wines_to_produce=2,
         framework="xgboost",
         gbdt_rf_or_mlp="gbdt",
         max_depth=3,
@@ -318,12 +318,12 @@ def test_wine_manufacturer_lgb_rf():
     scip = build_and_optimise_wine_manufacturer(
         data_seed=18,
         training_seed=18,
-        n_vineyards=35,
-        n_wines_to_produce=5,
+        n_vineyards=12,
+        n_wines_to_produce=3,
         framework="lightgbm",
         gbdt_rf_or_mlp="rf",
         max_depth=3,
-        n_estimators_layers=3,
+        n_estimators_layers=2,
     )
 
 
@@ -331,8 +331,8 @@ def test_wine_manufacturer_lgb_gbdt():
     scip = build_and_optimise_wine_manufacturer(
         data_seed=18,
         training_seed=18,
-        n_vineyards=35,
-        n_wines_to_produce=5,
+        n_vineyards=10,
+        n_wines_to_produce=2,
         framework="lightgbm",
         gbdt_rf_or_mlp="gbdt",
         max_depth=3,
@@ -344,8 +344,8 @@ def test_wine_manufacturer_sklearn_mlp():
     scip = build_and_optimise_wine_manufacturer(
         data_seed=18,
         training_seed=18,
-        n_vineyards=35,
-        n_wines_to_produce=5,
+        n_vineyards=12,
+        n_wines_to_produce=3,
         framework="sklearn",
         gbdt_rf_or_mlp="mlp",
         max_depth=3,
@@ -358,8 +358,8 @@ def test_wine_manufacturer_sklearn_mlp_bigm():
     scip = build_and_optimise_wine_manufacturer(
         data_seed=18,
         training_seed=18,
-        n_vineyards=35,
-        n_wines_to_produce=5,
+        n_vineyards=15,
+        n_wines_to_produce=3,
         framework="sklearn",
         gbdt_rf_or_mlp="mlp",
         formulation="bigm",

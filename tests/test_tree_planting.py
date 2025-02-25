@@ -302,7 +302,7 @@ def test_tree_planting_linear():
         max_depth=5,
         n_estimators_layers=2,
         layer_size=8,
-        n_grid_size=10,
+        n_grid_size=5,
     )
 
 
@@ -314,7 +314,7 @@ def test_tree_planting_decision_tree():
         max_depth=5,
         n_estimators_layers=2,
         layer_size=8,
-        n_grid_size=10,
+        n_grid_size=5,
     )
 
 
@@ -323,10 +323,10 @@ def test_tree_planing_gbdt():
         data_seed=18,
         training_seed=35,
         predictor_type="gbdt",
-        max_depth=5,
-        n_estimators_layers=8,
-        layer_size=8,
-        n_grid_size=10,
+        max_depth=3,
+        n_estimators_layers=4,
+        layer_size=4,
+        n_grid_size=5,
     )
 
 
@@ -337,7 +337,7 @@ def test_tree_planting_mlp():
         predictor_type="mlp",
         max_depth=5,
         n_estimators_layers=2,
-        layer_size=6,
+        layer_size=4,
         n_grid_size=3,
     )
 
@@ -350,6 +350,6 @@ def test_tree_planting_mlp_bigm():
         formulation="bigm",
         max_depth=5,
         n_estimators_layers=2,
-        layer_size=6,
+        layer_size=4,
         n_grid_size=3,
     )

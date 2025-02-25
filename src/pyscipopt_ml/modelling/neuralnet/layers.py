@@ -1,9 +1,9 @@
 """Bases classes for modeling neural network layers."""
+
 import numpy as np
 
 from ...exceptions import ParameterError
 from ..base_predictor_constraint import AbstractPredictorConstr
-from ..var_utils import create_vars
 from .activations import (
     add_identity_activation_constraint_layer,
     add_relu_activation_constraint_layer,
@@ -46,26 +46,21 @@ class AbstractNNLayer(AbstractPredictorConstr):
         """Add the layer to model."""
         if self.activation == "relu":
             if self.formulation == "sos":
-                slack = create_vars(
-                    self.scip_model,
+                slack = self.scip_model.addMatrixVar(
                     (self.input.shape[0], self.output.shape[-1]),
                     vtype="C",
-                    lb=0.0,
-                    ub=None,
-                    name_prefix=self.unique_naming_prefix + "slack",
+                    lb=0,
+                    name=self.unique_naming_prefix + "_slack",
                 )
                 relu_cons = add_relu_activation_constraint_layer(
                     self, slack, activation_only=activation_only
                 )
                 self._created_vars.append(slack)
             else:
-                activation_vars = create_vars(
-                    self.scip_model,
+                activation_vars = self.scip_model.addMatrixVar(
                     (self.input.shape[0], self.output.shape[-1]),
                     vtype="B",
-                    lb=0,
-                    ub=1,
-                    name_prefix=self.unique_naming_prefix + "relu_act",
+                    name=self.unique_naming_prefix + "_relu_act",
                 )
                 relu_cons = add_relu_activation_constraint_layer(
                     self, activation_vars, activation_only=activation_only, formulation="bigm"
@@ -123,16 +118,6 @@ class ActivationLayer(AbstractNNLayer):
             **kwargs,
         )
 
-    def _create_output_vars(self, input_vars):
-        output_vars = create_vars(
-            input_vars.shape,
-            vtype="C",
-            lb=None,
-            ub=None,
-            name_prefix=self.unique_naming_prefix + "output",
-        )
-        return output_vars
-
     def _mip_model(self, **kwargs):
         self._layer_mip_model(activation_only=True, **kwargs)
 
@@ -161,16 +146,6 @@ class DenseLayer(AbstractNNLayer):
             unique_naming_prefix,
             **kwargs,
         )
-
-    def _create_output_vars(self, input_vars):
-        output_vars = create_vars(
-            (input_vars.shape[0], self.coefs.shape[-1]),
-            vtype="C",
-            lb=None,
-            ub=None,
-            name_prefix=self.unique_naming_prefix + "output",
-        )
-        return output_vars
 
     def _mip_model(self, **kwargs):
         self.intercept = np.array(self.intercept).reshape(-1)

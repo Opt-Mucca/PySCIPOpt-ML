@@ -1,10 +1,10 @@
 """Implements some utility tools for all lightgbm objects."""
+
 import numpy as np
 from sklearn.base import is_classifier
 
 from ..exceptions import NoModel, NoSolution, ParameterError
 from ..modelling import AbstractPredictorConstr
-from ..modelling.var_utils import create_vars
 
 
 class LGBgetter(AbstractPredictorConstr):
@@ -135,9 +135,7 @@ class LGBgetter(AbstractPredictorConstr):
             trees_converted[class_idx] += 1
 
         shape = (n_samples, n_estimators, outdim)
-        tree_vars = create_vars(
-            self.scip_model, shape=shape, vtype="C", lb=None, ub=None, name_prefix="tree"
-        )
+        tree_vars = self.scip_model.addMatrixVar(shape, vtype="C", lb=None, ub=None, name="tree")
 
         return trees, tree_vars
 

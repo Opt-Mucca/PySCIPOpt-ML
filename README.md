@@ -1,4 +1,4 @@
-![Python versions](https://img.shields.io/badge/python-3.8%20|%203.9%20|%203.10%20|%203.11%20|%203.12-blue)
+![Python versions](https://img.shields.io/badge/python-3.8%20|%203.9%20|%203.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/pypi/v/pyscipopt-ml)](https://pypi.org/project/pyscipopt-ml)
 
@@ -31,7 +31,7 @@ For reporting bugs, issues and feature requests please
 `pyscipopt-ml` requires the following:
 - Python >= 3.8
 - [`numpy`](https://pypi.org/project/numpy/) >= 1.23.0
-- [`pyscipopt`](https://pypi.org/project/pyscipopt/) >= 4.4.0
+- [`pyscipopt`](https://pypi.org/project/pyscipopt/) >= 5.4.0
 
 The current version supports the following ML packages:
 - [`torch`](https://pypi.org/project/torch/)

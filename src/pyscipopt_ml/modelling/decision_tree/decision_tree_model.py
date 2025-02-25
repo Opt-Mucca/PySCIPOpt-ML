@@ -1,10 +1,7 @@
 """ Utilities for modelling decision trees """
-import pdb
 
 import numpy as np
 from pyscipopt import quicksum
-
-from ..var_utils import create_vars
 
 
 def compute_leafs_bounds(tree, epsilon, infinity):
@@ -79,9 +76,8 @@ def leaf_formulation(
     # Collect leaf nodes
     leaf_ids = tree["children_left"] <= -1
     n_leafs = sum(leaf_ids)
-    name_prefix = unique_naming_prefix + "leaf"
-    leaf_vars = create_vars(
-        scip_model, shape=(n_samples, n_leafs), vtype="B", lb=0, name_prefix=name_prefix
+    leaf_vars = scip_model.addMatrixVar(
+        (n_samples, n_leafs), vtype="B", lb=0, ub=None, name=unique_naming_prefix + "leaf"
     )
 
     # Calculate bounds for each leaf node

@@ -8,7 +8,6 @@ from torch import nn
 from ..exceptions import NoModel, NoSolution, ParameterError
 from ..modelling.classification import argmax_bound_formulation
 from ..modelling.neuralnet import BaseNNConstr
-from ..modelling.var_utils import create_vars
 
 
 def add_sequential_constr(
@@ -171,13 +170,12 @@ class SequentialConstr(BaseNNConstr):
                 else:
                     activation = "tanh"
                 if i < num_layers - 1:
-                    output = create_vars(
-                        self.scip_model,
+                    output = self.scip_model.addMatrixVar(
                         input_vars.shape,
                         vtype="C",
                         lb=None,
                         ub=None,
-                        name_prefix=self.unique_naming_prefix + f"layer_{i}",
+                        name=self.unique_naming_prefix + f"layer_{i}",
                     )
                     self._created_vars.append(output)
                 unique_naming_prefix = self.unique_naming_prefix + f"{activation}_{i}_"
@@ -203,13 +201,12 @@ class SequentialConstr(BaseNNConstr):
                         "The torch sequential model linear layer contained no weights or bias!"
                     )
                 if i < num_layers - 1 or self.output_type == "classification":
-                    output = create_vars(
-                        self.scip_model,
+                    output = self.scip_model.addMatrixVar(
                         (input_vars.shape[0], layer_weight.shape[-1]),
                         vtype="C",
                         lb=None,
                         ub=None,
-                        name_prefix=self.unique_naming_prefix + f"layer_{i}_",
+                        name=self.unique_naming_prefix + f"layer_{i}",
                     )
                     self._created_vars.append(output)
                 layer = self.add_dense_layer(

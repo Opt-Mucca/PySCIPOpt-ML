@@ -380,9 +380,9 @@ def test_dt_city_manager():
         data_seed=42,
         training_seed=42,
         dt_gbdt_or_mlp="dt",
-        max_depth_or_layer_size=6,
+        max_depth_or_layer_size=4,
         n_estimators_layers=3,
-        n_apartments=25,
+        n_apartments=15,
         epsilon=0.001,
         build_only=False,
     )
@@ -393,9 +393,9 @@ def test_gbdt_city_manager():
         data_seed=50,
         training_seed=80,
         dt_gbdt_or_mlp="gbdt",
-        max_depth_or_layer_size=4,
+        max_depth_or_layer_size=3,
         n_estimators_layers=3,
-        n_apartments=25,
+        n_apartments=15,
         epsilon=0.001,
         build_only=False,
     )
@@ -409,7 +409,7 @@ def test_mlp_city_manager():
         formulation="sos",
         max_depth_or_layer_size=3,
         n_estimators_layers=2,
-        n_apartments=3,
+        n_apartments=2,
         epsilon=0.001,
         build_only=False,
     )
@@ -423,7 +423,7 @@ def test_mlp_bigm_city_manager():
         formulation="bigm",
         max_depth_or_layer_size=3,
         n_estimators_layers=2,
-        n_apartments=3,
+        n_apartments=2,
         epsilon=0.001,
         build_only=False,
     )

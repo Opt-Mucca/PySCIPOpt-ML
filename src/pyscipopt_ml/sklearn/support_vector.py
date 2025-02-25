@@ -4,14 +4,12 @@
 :external+sklearn:py:class:`sklearn.svm.LinearSVC` into a PySCIPOpt Model.
 """
 
-
 import numpy as np
 from sklearn.svm import LinearSVC, LinearSVR
 
 from ..exceptions import NoModel
 from ..modelling import AbstractPredictorConstr
 from ..modelling.classification import argmax_bound_formulation
-from ..modelling.var_utils import create_vars
 from .skgetter import SKgetter
 
 
@@ -179,13 +177,12 @@ class SupportVectorConstr(SKgetter, AbstractPredictorConstr):
 
         # Create additional variables for classification
         if self.classification:
-            regression_vars = create_vars(
-                self.scip_model,
-                shape=(n_samples, 1),
+            regression_vars = self.scip_model.addMatrixVar(
+                (n_samples, 1),
                 vtype="C",
                 lb=None,
                 ub=None,
-                name_prefix=self.unique_naming_prefix + "reg_",
+                name=self.unique_naming_prefix + "_reg",
             )
 
         # Create the regression constraints for the SVR / SVC

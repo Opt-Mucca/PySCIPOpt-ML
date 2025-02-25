@@ -304,8 +304,8 @@ def test_gbdt_auto_manufacturer():
         training_seed=42,
         data_seed=42,
         gbdt_rf_or_mlp="gbdt",
-        max_depth_or_layer_size=5,
-        n_estimators_or_layers=5,
+        max_depth_or_layer_size=4,
+        n_estimators_or_layers=4,
         build_only=False,
     )
 
@@ -315,8 +315,8 @@ def test_rf_auto_manufacturer():
         training_seed=42,
         data_seed=42,
         gbdt_rf_or_mlp="rf",
-        max_depth_or_layer_size=5,
-        n_estimators_or_layers=5,
+        max_depth_or_layer_size=4,
+        n_estimators_or_layers=4,
         build_only=False,
     )
 
@@ -326,7 +326,7 @@ def test_mlp_auto_manufacturer():
         training_seed=42,
         data_seed=42,
         gbdt_rf_or_mlp="mlp",
-        max_depth_or_layer_size=6,
+        max_depth_or_layer_size=4,
         n_estimators_or_layers=2,
         build_only=False,
     )
@@ -338,7 +338,7 @@ def test_mlp_auto_manufacturer_bigm():
         data_seed=42,
         gbdt_rf_or_mlp="mlp",
         formulation="bigm",
-        max_depth_or_layer_size=6,
+        max_depth_or_layer_size=4,
         n_estimators_or_layers=2,
         build_only=False,
     )

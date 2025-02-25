@@ -2,12 +2,12 @@
 :external+sklearn:py:class:`sklearn.linear_model.LogisticRegression` in a
 PySCIPOpt Model.
 """
+
 import numpy as np
 from pyscipopt import exp, quicksum
 
 from ..exceptions import NoModel, ParameterError
 from ..modelling.classification import argmax_bound_formulation
-from ..modelling.var_utils import create_vars
 from .base_regression import BaseSKlearnRegressionConstr
 
 
@@ -130,13 +130,12 @@ class LogisticRegressionConstr(BaseSKlearnRegressionConstr):
         outdim = self.output.shape[-1]
 
         # First model the linear transformation
-        affine_vars = create_vars(
-            self.scip_model,
-            shape=self.output.shape,
+        affine_vars = self.scip_model.addMatrixVar(
+            self.output.shape,
             vtype="C",
             lb=None,
             ub=None,
-            name_prefix=self.unique_naming_prefix + "affine",
+            name=self.unique_naming_prefix + "affine",
         )
         self._created_vars.append(affine_vars)
         self.add_regression_constr(output=affine_vars)
@@ -161,37 +160,30 @@ class LogisticRegressionConstr(BaseSKlearnRegressionConstr):
             # In this case we are turning probabilities and need to model the logistic function explicitly
             if outdim == 1:
                 # In this case we are dealing with only a single class
-                log_output_vars = create_vars(
-                    self.scip_model,
-                    shape=self.output.shape,
+                log_output_vars = self.scip_model.addMatrixVar(
+                    self.output.shape,
                     vtype="C",
                     lb=0,
                     ub=1,
-                    name_prefix=self.unique_naming_prefix + "logistic",
+                    name=self.unique_naming_prefix + "logistic",
                 )
-                logistic_cons = np.zeros(self.output.shape, dtype=object)
-                output_eq_cons = np.zeros(self.output.shape, dtype=object)
-                for i in range(n_samples):
-                    for j in range(outdim):
-                        name = self.unique_naming_prefix + f"sigmoid_{i}_{j}"
-                        logistic_cons[i][j] = self.scip_model.addCons(
-                            log_output_vars[i][j] == 1 / (1 + exp(-affine_vars[i][j])), name=name
-                        )
-                        name = self.unique_naming_prefix + f"output_eq_{i}_{j}"
-                        output_eq_cons[i][j] = self.scip_model.addCons(
-                            log_output_vars[i][j] == self.output[i][j], name=name
-                        )
+                logistic_cons = self.scip_model.addMatrixCons(
+                    log_output_vars == 1 / (1 + exp(-affine_vars)),
+                    name=self.unique_naming_prefix + "sigmoid",
+                )
+                output_eq_cons = self.scip_model.addMatrixCons(
+                    log_output_vars == self.output, name=self.unique_naming_prefix + "output_eq"
+                )
                 self._created_vars.append(log_output_vars)
                 self._created_cons.append(logistic_cons)
                 self._created_cons.append(output_eq_cons)
             else:
-                log_output_vars = create_vars(
-                    self.scip_model,
-                    shape=self.output.shape,
+                log_output_vars = self.scip_model.addMatrixVar(
+                    self.output.shape,
                     vtype="C",
                     lb=0,
                     ub=1,
-                    name_prefix=self.unique_naming_prefix + "logistic",
+                    name=self.unique_naming_prefix + "logistic",
                 )
                 # Get the actual predictive model used by sklearn in the logistic regression model
                 ovr = self.predictor.multi_class in ["ovr", "warn"] or (

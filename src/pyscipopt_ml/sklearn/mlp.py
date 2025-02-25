@@ -1,9 +1,9 @@
 """Module for formulating a :external+sklearn:py:class:`sklearn.neural_network.MLPRegressor` or
 :external+sklearn:py:class:`sklearn.neural_network.MLPClassifier` in a PySCIPOpt Model."""
+
 from ..exceptions import NoModel
 from ..modelling.classification import argmax_bound_formulation
 from ..modelling.neuralnet import BaseNNConstr
-from ..modelling.var_utils import create_vars
 from .skgetter import SKgetter
 
 
@@ -151,23 +151,23 @@ class MLPConstr(SKgetter, BaseNNConstr):
                 if self.classification:
                     activation = "identity"
                 if self.classification:
-                    output = create_vars(
-                        self.scip_model,
+                    output = self.scip_model.addMatrixVar(
                         (self.input.shape[0], layer_coefs.shape[-1]),
                         vtype="C",
                         lb=None,
-                        name_prefix=self.unique_naming_prefix + f"layer_{i}",
+                        ub=None,
+                        name=self.unique_naming_prefix + f"layer_{i}",
                     )
                     self._created_vars.append(output)
                 else:
                     output = self.output
             else:
-                output = create_vars(
-                    self.scip_model,
+                output = self.scip_model.addMatrixVar(
                     (self.input.shape[0], layer_coefs.shape[-1]),
                     vtype="C",
                     lb=None,
-                    name_prefix=self.unique_naming_prefix + f"layer_{i}",
+                    ub=None,
+                    name=self.unique_naming_prefix + f"layer_{i}",
                 )
                 self._created_vars.append(output)
 
