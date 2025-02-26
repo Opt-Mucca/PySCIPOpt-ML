@@ -31,7 +31,7 @@ For reporting bugs, issues and feature requests please
 `pyscipopt-ml` requires the following:
 - Python >= 3.8
 - [`numpy`](https://pypi.org/project/numpy/) >= 1.23.0
-- [`pyscipopt`](https://pypi.org/project/pyscipopt/) >= 5.4.0
+- [`pyscipopt`](https://pypi.org/project/pyscipopt/) >= 5.4.1
 
 The current version supports the following ML packages:
 - [`torch`](https://pypi.org/project/torch/)
@@ -125,11 +125,14 @@ Then, you can install `pytest` and run a few basic tests:
 If this software was used for academic purposes, please cite our paper with the below information:
 
 ```
-@article{turner2023pyscipopt,
-  title={PySCIPOpt-ML: Embedding Trained Machine Learning Models into Mixed-Integer Programs},
-  author={Turner, Mark and Chmiela, Antonia and Koch, Thorsten and Winkler, Michael},
-  journal={arXiv preprint arXiv:2312.08074},
-  year={2023}
+@misc{turner2024pyscipoptmlembeddingtrainedmachine,
+      title={PySCIPOpt-ML: Embedding Trained Machine Learning Models into Mixed-Integer Programs},
+      author={Mark Turner and Antonia Chmiela and Thorsten Koch and Michael Winkler},
+      year={2024},
+      eprint={2312.08074},
+      archivePrefix={arXiv},
+      primaryClass={math.OC},
+      url={https://arxiv.org/abs/2312.08074},
 }
 ```
 
