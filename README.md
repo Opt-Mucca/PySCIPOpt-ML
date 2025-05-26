@@ -136,6 +136,14 @@ If this software was used for academic purposes, please cite our paper with the 
 }
 ```
 
+## Acknowledgements
+
+This code base was heavily inspired by
+[Gurobi-MachineLearning](https://github.com/Gurobi/gurobi-machinelearning/).
+The API and general architecture was made to match, so that users could easily
+transfer between one to the other. If there is a feature missing here, or you
+are looking for alternatives, then give it a try!
+
 ## Funding Acknowledgements
 
 The work for this article has been conducted in the Research Campus MODAL
